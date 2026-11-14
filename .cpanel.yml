@@ -1,0 +1,7 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/kaizorat/ultah.kaizoratech.com/
+    - /bin/mkdir -p "$DEPLOYPATH"
+    - /bin/cp -R assets "$DEPLOYPATH"
+    - /bin/cp -f index.html "$DEPLOYPATH"
