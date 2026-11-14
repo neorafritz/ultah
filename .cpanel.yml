@@ -5,3 +5,5 @@ deployment:
     - /bin/mkdir -p "$DEPLOYPATH"
     - /bin/cp -R assets "$DEPLOYPATH"
     - /bin/cp -f index.html "$DEPLOYPATH"
+    - /bin/mkdir -p "$DEPLOYPATH/tema1"
+    - /bin/cp -R tema1/. "$DEPLOYPATH/tema1/"
