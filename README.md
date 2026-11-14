@@ -1,33 +1,27 @@
-# Happy Birthday, Fadilla
+# Bluehour Birthday Story
 
-Website ucapan ulang tahun ke-23 untuk Fadilla Fitri Azzahra. Dibuat dengan React dan Vite, seluruhnya berjalan di frontend. Enam adegan satu layar penuh membentuk animasi cerita ulang tahun, masing-masing dengan ilustrasi berbeda. Scroll, swipe, atau navigasi lewat tombol untuk pindah adegan. Layout tanpa kartu dengan gambar menjadi latar utama.
+A mobile-friendly, frontend-only birthday story template built with React and Vite. It uses six animated anime scenes, a bright blue palette, and a transparent PNG gift that opens a personal birthday letter when tapped.
 
-## Menjalankan
+## Personalize it
 
-Gunakan Node.js 22 atau 24.
+Edit `src/data/story.js` to replace `[Nama Pacarmu]`, `[Namamu]`, and `[Usia]`, and to change the Indonesian copy for each chapter. Replace the six WebP scene illustrations in `src/assets/story/` to create a different visual theme. The closed and open gift PNGs live in `src/assets/objects/`.
+
+The gift image is the story's main interaction: tap or press Enter/Space on it to open the letter. Scroll, swipe, arrow keys, or the small chapter dots to move between scenes. Background illustrations and drifting petals animate continuously; reduced-motion preferences are respected.
+
+## Run locally
+
+Use Node.js 22 or 24.
 
 ```sh
 npm ci
 npm run dev
 ```
 
-## Build produksi
+## Build
 
 ```sh
 npm run build
 npm run preview
 ```
 
-Hasil build berada di `dist/`, menggunakan base path relatif agar bisa dipasang pada root domain atau subdirektori. Branch `main` memuat hasil build dan `.cpanel.yml` saja. Kode sumber dikembangkan pada branch lokal `work`.
-
-Deploy cPanel: salin `.cpanel.yml` ke root hasil build. Git Version Control → Update from Remote → Deploy HEAD Commit. Target: `/home/kaizorat/ultah.kaizoratech.com/`.
-
-## Personalisasi
-
-- Ubah nama, ucapan, dan pesan ulang tahun di `src/main.jsx`.
-- Ubah warna dan tata letak di `src/style.css`.
-- Enam ilustrasi anime halus dalam format WebP: `src/assets/story/`. Tiap adegan memakai ilustrasi yang berbeda; adegan malam dan ending menampilkan kamar mereka di dua rumah yang terpisah.
-- Adegan ulang tahun interaktif: meniup lilin memunculkan ucapan romantis.
-- Animasi menghormati preferensi reduced motion.
-- Font dibundel lokal. Musik lembut dihasilkan oleh Web Audio setelah tombol musik ditekan; tidak membutuhkan file audio atau layanan eksternal.
-- Tidak memerlukan API key, database, atau variabel lingkungan.
+The production files are written to `dist/` with a relative asset base, so the template can be served from a root domain or a subdirectory. All fonts and illustrations are bundled locally; the site needs no API keys, database, or external services.

@@ -1,5 +1,5 @@
 {
-  "name": "untuk-fadilla",
+  "name": "bluehour-birthday-story-template",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -9,10 +9,8 @@
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
-    "@fontsource/caveat": "^5.3.0",
-    "@fontsource/cormorant-garamond": "^5.3.0",
-    "@fontsource/dm-sans": "^5.3.0",
-    "lucide-react": "^0.468.0",
+    "@fontsource/dm-serif-display": "^5.3.0",
+    "@fontsource/space-grotesk": "^5.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
