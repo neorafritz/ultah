@@ -26,7 +26,7 @@ Deploy cPanel: salin `.cpanel.yml` ke root hasil build. Git Version Control → 
 
 - Ubah nama, ucapan, dan pesan ulang tahun di `src/main.jsx`.
 - Ubah warna dan tata letak di `src/style.css`.
-- Enam ilustrasi anime watercolor dalam format WebP: `src/assets/story/`. Tiap adegan memakai ilustrasi yang berbeda.
+- Enam ilustrasi anime halus dalam format WebP: `src/assets/story/`. Tiap adegan memakai ilustrasi yang berbeda; adegan malam dan ending menampilkan kamar mereka di dua rumah yang terpisah.
 - Adegan ulang tahun interaktif: meniup lilin memunculkan ucapan romantis.
 - Animasi menghormati preferensi reduced motion.
 - Font dibundel lokal. Musik lembut dihasilkan oleh Web Audio setelah tombol musik ditekan; tidak membutuhkan file audio atau layanan eksternal.
