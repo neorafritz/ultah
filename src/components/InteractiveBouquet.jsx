@@ -5,6 +5,7 @@ import tulipImage from '../assets/bouquet/tulip.png';
 import carnationImage from '../assets/bouquet/carnation.png';
 import fillerImage from '../assets/bouquet/filler.png';
 import leafPairImage from '../assets/bouquet/leaf-pair.png';
+import stemImage from '../assets/bouquet/stem.png';
 import foldedWrapperImage from '../assets/bouquet/wrapper-folded.png';
 import petalWrapperImage from '../assets/bouquet/wrapper-petal.png';
 import pleatedWrapperImage from '../assets/bouquet/wrapper-pleated.png';
@@ -182,7 +183,7 @@ function persistArrangement(value) {
 function curveFor(flower, index) {
   const startX = 500 + clamp((flower.x - 500) * 0.22, -72, 72);
   const startY = 616;
-  const endY = flower.y + (flower.type === 'tulip' ? 42 : 32);
+  const endY = flower.y + (flower.type === 'tulip' ? 31 : 32);
   const bend = ((index % 3) - 1) * 17;
   const c1 = {x: startX + bend, y: 478};
   const c2 = {x: flower.x - (flower.x - startX) * 0.08 + bend * 0.42, y: endY + 132};
@@ -202,6 +203,43 @@ function Leaf({x, y}) {
   return (
     <image href={leafPairImage} x={x - 31} y={y - 48} width="62" height="50" className="bouquet-leaf" aria-hidden="true" />
   );
+}
+
+function StemArtwork({curve, flower, index}) {
+  const distance = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
+  const start = {x: curve.startX, y: curve.startY};
+  const end = {x: curve.endX, y: curve.endY};
+  const estimatedLength = distance(start, curve.c1) + distance(curve.c1, curve.c2) + distance(curve.c2, end);
+  const segmentCount = clamp(Math.ceil(estimatedLength / 42), 7, 16);
+  const stemWidth = 6.2 * flower.scale;
+  const overlap = 3.5;
+
+  return Array.from({length: segmentCount}, (_, segmentIndex) => {
+    const start = bezierPoint(curve, segmentIndex / segmentCount);
+    const end = bezierPoint(curve, (segmentIndex + 1) / segmentCount);
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const length = Math.hypot(dx, dy);
+    const centerX = (start.x + end.x) / 2;
+    const centerY = (start.y + end.y) / 2;
+    const rotation = Math.atan2(dy, dx) * 180 / Math.PI - 90;
+    const imageHeight = length + overlap;
+
+    return (
+      <image
+        key={'stem-' + index + '-' + segmentIndex}
+        href={stemImage}
+        x={centerX - stemWidth / 2}
+        y={centerY - imageHeight / 2}
+        width={stemWidth}
+        height={imageHeight}
+        preserveAspectRatio="none"
+        transform={'rotate(' + rotation + ' ' + centerX + ' ' + centerY + ')'}
+        className="bouquet-stem-image"
+        aria-hidden="true"
+      />
+    );
+  });
 }
 
 function FlowerArtwork({flower}) {
@@ -622,22 +660,12 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
               onPointerCancel={finishDrag}
               onLostPointerCapture={finishDrag}
             >
-              <defs>
-                <radialGradient id="bouquet-ground-shadow">
-                  <stop offset="0" stopColor="#765d56" stopOpacity=".15" />
-                  <stop offset="1" stopColor="#765d56" stopOpacity="0" />
-                </radialGradient>
-              </defs>
-              <ellipse cx="500" cy="628" rx="245" ry="36" fill="url(#bouquet-ground-shadow)" />
               {orderedFlowers.map((flower, index) => {
                 const curve = curveFor(flower, index);
                 const leafOne = bezierPoint(curve, 0.68);
-                const path = 'M' + curve.startX + ' ' + curve.startY + ' C' + curve.c1.x + ' ' + curve.c1.y + ' ' + curve.c2.x + ' ' + curve.c2.y + ' ' + curve.endX + ' ' + curve.endY;
                 return (
                   <g key={'stem-' + flower.id} className="bouquet-stem" aria-hidden="true">
-                    <path d={path} className="bouquet-stem-shadow" />
-                    <path d={path} className="bouquet-stem-line" />
-                    <path d={path} className="bouquet-stem-highlight" />
+                    <StemArtwork curve={curve} flower={flower} index={index} />
                     <Leaf x={leafOne.x} y={leafOne.y} />
                   </g>
                 );
