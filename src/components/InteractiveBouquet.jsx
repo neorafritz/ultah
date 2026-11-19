@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {ArrowDown, ArrowUp, Check, Download, Flower2, Plus, Redo2, RotateCcw, RotateCw, Trash2, Undo2, Upload, X} from 'lucide-react';
+import {ArrowDown, ArrowUp, Check, Download, Flower2, Move, Plus, Redo2, RotateCcw, RotateCw, Trash2, Undo2, Upload, X} from 'lucide-react';
 import './InteractiveBouquet.css';
 
 const STORAGE_KEY = 'ultah.interactive-bouquet.v1';
