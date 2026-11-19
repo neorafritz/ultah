@@ -20,7 +20,7 @@ npm run preview
 
 Hasil build berada di `dist/` dan menggunakan base path relatif agar bisa dipasang pada root domain atau subdirektori.
 
-Source tema utama berada di `src/`. Untuk memperbarui hasil situs root, salin `dist/index.html` ke `index.html` dan isi `dist/assets/` ke `assets/`. Jangan membangun `/tema1/` dari source ini; template tersebut memiliki project terpisah di `tema1-source/`.
+Source tema utama berada di `src/`, dengan entry Vite di `src/index.html`. Project Vite memakai folder itu sebagai root, sedangkan `index.html` dan `assets/` di root repo adalah hasil build untuk hosting. Untuk memperbarui situs root, jalankan `npm run build`, lalu salin `dist/index.html` ke `index.html` dan isi `dist/assets/` ke `assets/`. Jangan membangun `/tema1/` dari source ini; template tersebut memiliki project terpisah di `tema1-source/`.
 
 `.cpanel.yml` menyalin `index.html`, `assets/`, dan build `/tema1/` ke hosting. Setelah hasil build root diperbarui, Git Version Control → Update from Remote → Deploy HEAD Commit. Target: `/home/kaizorat/ultah.kaizoratech.com/`.
 

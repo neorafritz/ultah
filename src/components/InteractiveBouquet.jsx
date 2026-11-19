@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {ArrowDown, ArrowUp, Check, Download, Flower2, Move, Plus, Redo2, RotateCcw, RotateCw, Trash2, Undo2, Upload, X} from 'lucide-react';
+import {ArrowDown, ArrowUp, Check, Download, Flower2, Plus, Redo2, RotateCcw, RotateCw, Trash2, Undo2, Upload, X} from 'lucide-react';
 import './InteractiveBouquet.css';
 
 const STORAGE_KEY = 'ultah.interactive-bouquet.v1';
@@ -619,7 +619,7 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
       <div className="bouquet-workspace">
         <main className="bouquet-stage-area" aria-label="Area merangkai bunga">
           <div className="bouquet-stage-caption">
-            <span><Move size={14} /> Seret satu bunga untuk mengatur posisinya</span>
+            <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3v18M7 8l5-5 5 5M7 16l5 5 5-5" /></svg> Seret satu bunga untuk mengatur posisinya</span>
             <span className="bouquet-stage-count">{arrangement.flowers.length} bunga</span>
           </div>
           <div className="bouquet-canvas">
