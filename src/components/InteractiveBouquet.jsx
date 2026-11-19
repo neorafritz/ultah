@@ -1,5 +1,16 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {ArrowDown, ArrowUp, Check, Download, Flower2, Plus, Redo2, RotateCcw, RotateCw, Trash2, Undo2, Upload, X} from 'lucide-react';
+import roseImage from '../assets/bouquet/rose.png';
+import tulipImage from '../assets/bouquet/tulip.png';
+import carnationImage from '../assets/bouquet/carnation.png';
+import fillerImage from '../assets/bouquet/filler.png';
+import leafPairImage from '../assets/bouquet/leaf-pair.png';
+import foldedWrapperImage from '../assets/bouquet/wrapper-folded.png';
+import petalWrapperImage from '../assets/bouquet/wrapper-petal.png';
+import pleatedWrapperImage from '../assets/bouquet/wrapper-pleated.png';
+import classicRibbonImage from '../assets/bouquet/ribbon-classic.png';
+import doubleRibbonImage from '../assets/bouquet/ribbon-double.png';
+import slimRibbonImage from '../assets/bouquet/ribbon-slim.png';
 import './InteractiveBouquet.css';
 
 const STORAGE_KEY = 'ultah.interactive-bouquet.v1';
@@ -33,6 +44,48 @@ const ribbonColors = {
   cherry: {label: 'Merah ceri', light: '#f5a7b6', mid: '#c64d70', dark: '#8f3457'},
   cream: {label: 'Krem', light: '#fff2d8', mid: '#dfc29b', dark: '#ad896e'},
   mauve: {label: 'Mauve', light: '#e8c7d6', mid: '#bd829f', dark: '#895c7a'}
+};
+
+const flowerImages = {
+  rose: roseImage,
+  tulip: tulipImage,
+  carnation: carnationImage,
+  filler: fillerImage
+};
+
+const flowerFilters = {
+  blush: 'saturate(.88) brightness(1.04)',
+  rose: 'saturate(1.22) brightness(.87) contrast(1.04)',
+  coral: 'hue-rotate(-22deg) saturate(.92) brightness(1.04)',
+  peach: 'hue-rotate(-34deg) saturate(.78) brightness(1.08)',
+  ivory: 'grayscale(.72) sepia(.33) saturate(.78) brightness(1.18)'
+};
+
+const wrapperImages = {
+  folded: foldedWrapperImage,
+  petal: petalWrapperImage,
+  pleated: pleatedWrapperImage
+};
+
+const wrapperFilters = {
+  blush: 'saturate(.9) brightness(1.03)',
+  rose: 'hue-rotate(-8deg) saturate(1.12) brightness(.97)',
+  cream: 'grayscale(.52) sepia(.3) saturate(.78) brightness(1.1)',
+  mauve: 'hue-rotate(15deg) saturate(.58) brightness(.97)',
+  sage: 'hue-rotate(66deg) saturate(.58) brightness(1.01)'
+};
+
+const ribbonImages = {
+  classic: classicRibbonImage,
+  double: doubleRibbonImage,
+  slim: slimRibbonImage
+};
+
+const ribbonFilters = {
+  rose: 'saturate(1.08) brightness(.98)',
+  cherry: 'hue-rotate(-8deg) saturate(1.22) brightness(.84) contrast(1.04)',
+  cream: 'grayscale(.74) sepia(.45) saturate(.68) brightness(1.2)',
+  mauve: 'hue-rotate(15deg) saturate(.58) brightness(.96)'
 };
 
 const wrapperStyles = [
@@ -145,133 +198,68 @@ function bezierPoint(curve, t) {
   };
 }
 
-function bezierAngle(curve, t) {
-  const u = 1 - t;
-  const dx = 3 * u * u * (curve.c1.x - curve.startX) + 6 * u * t * (curve.c2.x - curve.c1.x) + 3 * t * t * (curve.endX - curve.c2.x);
-  const dy = 3 * u * u * (curve.c1.y - curve.startY) + 6 * u * t * (curve.c2.y - curve.c1.y) + 3 * t * t * (curve.endY - curve.c2.y);
-  return Math.atan2(dy, dx) * 180 / Math.PI;
-}
-
-function Leaf({x, y, angle, side, index}) {
-  const rotation = angle + (side === 'left' ? -48 : 45);
+function Leaf({x, y}) {
   return (
-    <g transform={'translate(' + x + ' ' + y + ') rotate(' + rotation + ')'} className="bouquet-leaf">
-      <path d="M0 0 C12 -17 34 -22 49 -10 C37 3 17 8 0 0Z" fill={index % 2 ? '#709466' : '#527f59'} />
-      <path d="M2 0 C17 -5 31 -9 45 -11" fill="none" stroke="#b3c49a" strokeWidth="1.4" strokeLinecap="round" opacity=".78" />
-    </g>
+    <image href={leafPairImage} x={x - 31} y={y - 48} width="62" height="50" className="bouquet-leaf" aria-hidden="true" />
   );
 }
 
-function FlowerArtwork({flower, colors}) {
-  const gradientId = 'petal-' + flower.id;
-  const darkId = 'petal-dark-' + flower.id;
+function FlowerArtwork({flower}) {
+  const image = flowerImages[flower.type];
+  const filter = flowerFilters[flower.color];
+  const artwork = {
+    rose: {x: -53, y: -50, width: 106, height: 100},
+    tulip: {x: -47, y: -71, width: 94, height: 108},
+    carnation: {x: -54, y: -51, width: 108, height: 102},
+    filler: {x: -38, y: -30, width: 76, height: 60}
+  }[flower.type];
   return (
     <g transform={'rotate(' + flower.rotation + ') scale(' + flower.scale + ')'}>
       <g className="bouquet-flower-sway">
-        {flower.type === 'rose' && (
-          <g className="rose-art" stroke={colors.dark} strokeWidth="1.25" strokeLinejoin="round">
-            <ellipse cx="0" cy="3" rx="43" ry="33" fill={'url(#' + gradientId + ')'} />
-            <path d="M-34 8 C-51 -5 -43 -33 -22 -38 C-6 -42 1 -29 -8 -17 C8 -31 30 -23 30 -8 C31 6 16 17 1 13 C14 23 9 37 -9 38 C-25 38 -37 26 -34 8Z" fill={'url(#' + darkId + ')'} />
-            <path d="M-21 4 C-31 -10 -18 -25 -5 -22 C5 -20 3 -9 -4 -5 C7 -15 20 -9 18 1 C16 11 6 16 -3 11 C4 21 -3 28 -13 23 C-21 19 -24 12 -21 4Z" fill={'url(#' + gradientId + ')'} />
-            <path d="M-6 1 C-8 -7 2 -13 9 -8 C16 -3 11 5 5 6 C9 11 3 17 -3 13 C-8 10 -8 5 -6 1Z" fill={colors.light} />
-            <path d="M-30 -6 C-25 -26 -12 -30 -4 -27 M12 -24 C25 -18 29 -8 26 0 M-28 19 C-18 28 -10 29 -3 27" fill="none" stroke={colors.light} strokeWidth="2.2" strokeLinecap="round" opacity=".76" />
-          </g>
-        )}
-        {flower.type === 'tulip' && (
-          <g className="tulip-art" stroke={colors.dark} strokeWidth="1.4" strokeLinejoin="round">
-            <path d="M-40 28 C-46 14 -41 -7 -33 -28 C-28 -42 -20 -42 -14 -26 L-5 -52 C-1 -63 8 -62 12 -49 L19 -26 C27 -43 36 -41 41 -25 C48 -3 46 19 36 31 C20 51 -21 49 -40 28Z" fill={'url(#' + gradientId + ')'} />
-            <path d="M-29 22 C-27 5 -23 -11 -14 -26 M2 39 C3 14 3 -28 5 -53 M30 22 C27 3 23 -11 18 -25" fill="none" stroke={colors.light} strokeWidth="2.4" strokeLinecap="round" opacity=".82" />
-            <path d="M-17 35 Q0 43 18 35" fill="none" stroke={colors.dark} strokeWidth="1.2" opacity=".65" />
-          </g>
-        )}
-        {flower.type === 'carnation' && (
-          <g className="carnation-art" stroke={colors.dark} strokeWidth="1" strokeLinejoin="round">
-            {Array.from({length: 14}, (_, index) => (
-              <path key={index} d="M0 1 C-18 -8 -20 -28 -10 -39 C-3 -47 8 -39 8 -27 C20 -39 31 -30 25 -17 C22 -8 12 -2 0 1Z" fill={index % 2 ? 'url(#' + gradientId + ')' : 'url(#' + darkId + ')'} transform={'rotate(' + (index * 360 / 14) + ')'} />
-            ))}
-            <circle cx="0" cy="0" r="15" fill={'url(#' + gradientId + ')'} stroke={colors.dark} strokeWidth="1.2" />
-            <path d="M-10 -3 Q-3 -12 4 -6 M4 7 Q12 0 9 -6 M-5 9 Q-11 4 -9 -2" fill="none" stroke={colors.light} strokeWidth="2.1" strokeLinecap="round" opacity=".84" />
-          </g>
-        )}
-        {flower.type === 'filler' && (
-          <g className="filler-art" stroke={colors.dark} strokeWidth="1" strokeLinejoin="round">
-            {Array.from({length: 6}, (_, index) => (
-              <ellipse key={index} cx="0" cy="-17" rx="9" ry="17" fill={'url(#' + gradientId + ')'} transform={'rotate(' + (index * 60) + ')'} />
-            ))}
-            <circle cx="0" cy="0" r="8" fill="#d9ae65" stroke="#ae8250" strokeWidth="1" />
-            <circle cx="-2" cy="-2" r="2" fill="#fff3c8" opacity=".9" />
-          </g>
-        )}
+        <image
+          href={image}
+          x={artwork.x}
+          y={artwork.y}
+          width={artwork.width}
+          height={artwork.height}
+          preserveAspectRatio="xMidYMid meet"
+          className="bouquet-flower-image"
+          style={{filter}}
+          draggable="false"
+        />
       </g>
     </g>
   );
 }
 
-function BouquetWrapper({arrangement, wrapper, ribbon}) {
-  const paper = wrapperColors[wrapper.color];
-  const tie = ribbonColors[ribbon.color];
-  const paperId = 'bouquet-paper-gradient';
-  const ribbonId = 'bouquet-ribbon-gradient';
+function BouquetWrapper({wrapper, ribbon}) {
   return (
     <>
-      <defs>
-        <linearGradient id={paperId} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor={paper.light} />
-          <stop offset=".56" stopColor={paper.mid} />
-          <stop offset="1" stopColor={paper.dark} />
-        </linearGradient>
-        <linearGradient id={ribbonId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor={tie.light} />
-          <stop offset=".55" stopColor={tie.mid} />
-          <stop offset="1" stopColor={tie.dark} />
-        </linearGradient>
-      </defs>
-      <g className={'bouquet-paper paper-' + wrapper.style} aria-hidden="true">
-        <path d="M331 382 Q409 403 500 598 Q592 404 669 382 L636 559 Q584 610 500 626 Q416 610 364 559Z" fill="#9b6e6c" opacity=".11" transform="translate(0 8)" />
-        <path d="M331 382 Q411 403 500 598 Q589 403 669 382 L636 554 Q575 608 500 626 Q425 608 364 554Z" fill={'url(#' + paperId + ')'} stroke={paper.dark} strokeWidth="2.2" strokeLinejoin="round" />
-        {wrapper.style === 'folded' && (
-          <>
-            <path d="M331 382 Q389 423 500 598 Q425 537 364 554 Q344 470 331 382Z" fill={paper.light} opacity=".86" />
-            <path d="M669 382 Q610 423 500 598 Q575 537 636 554 Q656 470 669 382Z" fill={paper.light} opacity=".56" />
-            <path d="M364 554 Q422 520 500 598 M636 554 Q578 520 500 598" fill="none" stroke={paper.dark} strokeWidth="2" opacity=".7" />
-          </>
-        )}
-        {wrapper.style === 'petal' && (
-          <>
-            <path d="M331 382 Q354 432 403 454 Q409 405 391 378 Q448 417 500 598 Q450 551 414 537 Q380 518 364 554Z" fill={paper.light} opacity=".78" />
-            <path d="M669 382 Q646 432 597 454 Q591 405 609 378 Q552 417 500 598 Q550 551 586 537 Q620 518 636 554Z" fill={paper.light} opacity=".58" />
-            <path d="M403 454 Q452 490 500 598 M597 454 Q548 490 500 598" fill="none" stroke={paper.dark} strokeWidth="1.8" opacity=".56" />
-          </>
-        )}
-        {wrapper.style === 'pleated' && (
-          <>
-            <path d="M354 399 Q397 452 426 560 M391 411 Q436 486 457 590 M646 399 Q603 452 574 560 M609 411 Q564 486 543 590" fill="none" stroke={paper.light} strokeWidth="8" opacity=".6" />
-            <path d="M374 431 Q430 492 476 594 M626 431 Q570 492 524 594" fill="none" stroke={paper.dark} strokeWidth="1.8" opacity=".42" />
-          </>
-        )}
-        <path d="M500 598 Q480 612 464 619 M500 598 Q520 612 536 619" fill="none" stroke={paper.light} strokeWidth="3" strokeLinecap="round" opacity=".82" />
-      </g>
+      <image
+        href={wrapperImages[wrapper.style]}
+        x="246"
+        y="312"
+        width="508"
+        height="354"
+        preserveAspectRatio="none"
+        className="bouquet-paper"
+        style={{filter: wrapperFilters[wrapper.color] + ' drop-shadow(0 10px 8px rgba(99, 66, 67, .12))'}}
+        aria-hidden="true"
+        draggable="false"
+      />
       {ribbon.visible && (
-        <g className={'bouquet-ribbon ribbon-' + ribbon.style} transform="translate(500 552)" aria-hidden="true">
-          {ribbon.style === 'double' && (
-            <g transform="scale(.78) translate(0 -13)" opacity=".74">
-              <path d="M0 2 C-17 -29 -58 -52 -91 -32 C-113 -18 -99 7 -70 14 C-44 20 -17 13 0 2Z" fill={'url(#' + ribbonId + ')'} stroke={tie.dark} strokeWidth="2" />
-              <path d="M0 2 C17 -29 58 -52 91 -32 C113 -18 99 7 70 14 C44 20 17 13 0 2Z" fill={'url(#' + ribbonId + ')'} stroke={tie.dark} strokeWidth="2" />
-            </g>
-          )}
-          <path d="M-3 0 C-18 -29 -62 -52 -96 -30 C-117 -16 -99 10 -69 15 C-43 20 -16 11 -3 0Z" fill={'url(#' + ribbonId + ')'} stroke={tie.dark} strokeWidth="2.2" />
-          <path d="M3 0 C18 -29 62 -52 96 -30 C117 -16 99 10 69 15 C43 20 16 11 3 0Z" fill={'url(#' + ribbonId + ')'} stroke={tie.dark} strokeWidth="2.2" />
-          <path d="M-9 7 C-26 41 -46 68 -65 88 L-89 76 L-77 104 C-50 91 -28 57 -1 15Z" fill={'url(#' + ribbonId + ')'} stroke={tie.dark} strokeWidth="2" strokeLinejoin="round" />
-          <path d="M9 7 C26 41 46 68 65 88 L89 76 L77 104 C50 91 28 57 1 15Z" fill={'url(#' + ribbonId + ')'} stroke={tie.dark} strokeWidth="2" strokeLinejoin="round" />
-          {ribbon.style === 'slim' && (
-            <g fill="none" stroke={tie.light} strokeWidth="2.3" opacity=".8">
-              <path d="M-9 1 C-32 -24 -62 -36 -87 -24" />
-              <path d="M9 1 C32 -24 62 -36 87 -24" />
-            </g>
-          )}
-          <rect x="-15" y="-8" width="30" height="32" rx="9" fill={'url(#' + ribbonId + ')'} stroke={tie.dark} strokeWidth="2" />
-          <path d="M-8 -2 Q0 -7 8 -2 M-7 10 Q0 15 7 10" fill="none" stroke={tie.light} strokeWidth="2.2" strokeLinecap="round" opacity=".8" />
-        </g>
+        <image
+          href={ribbonImages[ribbon.style]}
+          x="370"
+          y="475"
+          width="260"
+          height="182"
+          preserveAspectRatio="none"
+          className={'bouquet-ribbon ribbon-' + ribbon.style}
+          style={{filter: ribbonFilters[ribbon.color] + ' drop-shadow(0 3px 4px rgba(110, 51, 69, .22))'}}
+          aria-hidden="true"
+          draggable="false"
+        />
       )}
     </>
   );
@@ -639,38 +627,18 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
                   <stop offset="0" stopColor="#765d56" stopOpacity=".15" />
                   <stop offset="1" stopColor="#765d56" stopOpacity="0" />
                 </radialGradient>
-                {orderedFlowers.map((flower) => {
-                  const colors = petalColors[flower.color];
-                  return (
-                    <React.Fragment key={'defs-' + flower.id}>
-                      <radialGradient id={'petal-' + flower.id} cx=".34" cy=".22" r=".82">
-                        <stop offset="0" stopColor={colors.light} />
-                        <stop offset=".58" stopColor={colors.mid} />
-                        <stop offset="1" stopColor={colors.dark} />
-                      </radialGradient>
-                      <linearGradient id={'petal-dark-' + flower.id} x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0" stopColor={colors.mid} />
-                        <stop offset="1" stopColor={colors.dark} />
-                      </linearGradient>
-                    </React.Fragment>
-                  );
-                })}
               </defs>
               <ellipse cx="500" cy="628" rx="245" ry="36" fill="url(#bouquet-ground-shadow)" />
               {orderedFlowers.map((flower, index) => {
                 const curve = curveFor(flower, index);
-                const leafOne = bezierPoint(curve, 0.35);
-                const leafTwo = bezierPoint(curve, 0.54);
-                const angleOne = bezierAngle(curve, 0.35);
-                const angleTwo = bezierAngle(curve, 0.54);
+                const leafOne = bezierPoint(curve, 0.68);
                 const path = 'M' + curve.startX + ' ' + curve.startY + ' C' + curve.c1.x + ' ' + curve.c1.y + ' ' + curve.c2.x + ' ' + curve.c2.y + ' ' + curve.endX + ' ' + curve.endY;
                 return (
                   <g key={'stem-' + flower.id} className="bouquet-stem" aria-hidden="true">
                     <path d={path} className="bouquet-stem-shadow" />
                     <path d={path} className="bouquet-stem-line" />
                     <path d={path} className="bouquet-stem-highlight" />
-                    <Leaf x={leafOne.x} y={leafOne.y} angle={angleOne} side="left" index={index} />
-                    <Leaf x={leafTwo.x} y={leafTwo.y} angle={angleTwo} side="right" index={index} />
+                    <Leaf x={leafOne.x} y={leafOne.y} />
                   </g>
                 );
               })}
@@ -694,7 +662,7 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
                     onKeyDown={(event) => handleFlowerKey(event, flower)}
                   >
                     <circle className="bouquet-selection-ring" r="57" />
-                    <FlowerArtwork flower={flower} colors={colors} />
+                    <FlowerArtwork flower={flower} />
                     <circle className="bouquet-flower-hit-area" r="55" />
                     <title>{flowerTypes[flower.type]} · {colors.label}</title>
                   </g>
@@ -725,7 +693,7 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
             <div className="bouquet-library">
               {Object.entries(flowerTypes).map(([type, label]) => (
                 <button key={type} type="button" className="bouquet-library-button" disabled={arrangement.flowers.length >= MAX_FLOWERS} onClick={() => addFlower(type)}>
-                  <span className={'bouquet-library-flower library-' + type} aria-hidden="true"><i /><i /><i /><i /><b /></span>
+                  <span className={'bouquet-library-flower library-' + type} aria-hidden="true"><img src={flowerImages[type]} alt="" /></span>
                   <span>{label}</span><Plus size={15} />
                 </button>
               ))}
