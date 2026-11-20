@@ -1,63 +1,51 @@
-import apart from './assets/story/01-apart.webp';
-import dream from './assets/story/02-dream.webp';
-import reunion from './assets/story/03-reunion.webp';
-import gift from './assets/story/04-gift.webp';
-import cake from './assets/story/05-cake.webp';
-import waking from './assets/story/06-waking.webp';
-import apartThumb from './assets/story/thumbs/01-apart.webp';
-import dreamThumb from './assets/story/thumbs/02-dream.webp';
-import reunionThumb from './assets/story/thumbs/03-reunion.webp';
-import giftThumb from './assets/story/thumbs/04-gift.webp';
-import cakeThumb from './assets/story/thumbs/05-cake.webp';
-import wakingThumb from './assets/story/thumbs/06-waking.webp';
+import apart from './assets/story/v2/01-apart-flat.jpg';
+import dream from './assets/story/v2/02-dream-flat.jpg';
+import reunion from './assets/story/v2/03-reunion-flat.jpg';
+import gift from './assets/story/v2/04-gift-flat.jpg';
+import cake from './assets/story/v2/05-cake-flat.jpg';
+import waking from './assets/story/v2/06-waking-flat.jpg';
 
 export const chapters = [
   {
-    name: 'Pembuka', thumbnail: apartThumb, section: 'Untuk ulang tahunmu yang ke-23', title: 'Happy Birthday,', accent: 'Fadilla.',
-    copy: 'Malam ini, ada kisah kecil tentang dua hati yang saling mencari. Kubungkus semuanya khusus untukmu.',
-    action: 'Mulai cerita kita', image: apart, caption: 'Dua jendela, satu langit.',
-    alt: 'Ilustrasi malam saat Fadilla dan pasangannya masih terpisah jarak.',
-    note: 'Kalau malam ini kita melihat bulan yang sama, anggap saja aku sedang melambai dari jendelaku.',
-    color: '#83354e', paper: '#f7f1e6'
+    name: 'Jarak', section: 'Untuk ulang tahunmu yang ke-23', title: 'Jarak terasa jauh,', accent: 'langit tetap sama.',
+    copy: 'Di dua kota yang berbeda, kita masih menatap langit biru yang sama. Kisah kecil ini kusimpan khusus untukmu.',
+    action: 'Lanjutkan kisah', image: apart, caption: 'Dua jendela, satu langit.',
+    alt: 'Pasangan muda memandang langit biru dari jendela rumah yang berbeda, di antara bunga sakura.',
+    note: 'Walau jendela kita berbeda, aku tetap membayangkan suatu hari kita bisa menatap langit yang sama.'
   },
   {
-    name: 'Mimpi', thumbnail: dreamThumb, section: 'Saat kota terlelap', title: 'Jauh di mata,', accent: 'dekat di mimpi.',
-    copy: 'Malam memisahkan kita oleh dinding dan jarak. Tapi saat mata terpejam, aku selalu menemukanmu.',
-    action: 'Ikuti mimpi kita', image: dream, caption: 'Sampai jumpa di dalam mimpi.',
-    alt: 'Ilustrasi dua dunia yang tersambung dalam mimpi malam.',
-    note: 'Dari sekian banyak tempat di dalam mimpi, kakiku selalu hafal jalan yang menuju kamu.',
-    color: '#534569', paper: '#f1edf4'
+    name: 'Mimpi', section: 'Saat kota-kota terlelap', title: 'Di dalam mimpi,', accent: 'kita saling menemukan.',
+    copy: 'Jarak sempat memisahkan langkah kita. Tapi saat mata terpejam, aku selalu tahu jalan yang menuju kamu.',
+    action: 'Ikuti mimpinya', image: dream, caption: 'Kita bertemu di atas awan.',
+    alt: 'Pasangan berjalan mendekat di atas jalur awan menuju taman sakura di langit biru.',
+    note: 'Dari sekian banyak tempat di dalam mimpi, kakiku selalu hafal jalan yang menuju kamu.'
   },
   {
-    name: 'Bertemu', thumbnail: reunionThumb, section: 'Di bawah langit yang sama', title: 'Mimpi yang', accent: 'hanya milik kita.',
+    name: 'Bertemu', section: 'Di bawah langit yang sama', title: 'Akhirnya bertemu,', accent: 'di taman yang kita impikan.',
     copy: 'Di bawah langit biru dan bunga yang beterbangan, akhirnya kita bertemu. Kali ini aku ingin tinggal sedikit lebih lama.',
-    action: 'Temukan aku', image: reunion, caption: 'Di antara kelopak, ada kamu.',
-    alt: 'Ilustrasi pertemuan pasangan di taman berbunga.',
-    note: 'Aku mungkin lupa nama taman itu, tapi aku ingat persis caramu tersenyum waktu melihatku.',
-    color: '#3e6153', paper: '#eff1e8'
+    action: 'Temui aku', image: reunion, caption: 'Di antara kelopak, ada kamu.',
+    alt: 'Pasangan bertemu di taman sakura dengan langit biru, bukit, sungai kecil dan jalan setapak.',
+    note: 'Aku mungkin lupa nama taman itu, tapi aku ingat persis caramu tersenyum waktu melihatku.'
   },
   {
-    name: 'Hadiah', thumbnail: giftThumb, section: 'Sebuah kejutan kecil', title: 'Akhirnya,', accent: 'kutemukan kamu.',
-    copy: 'Pelukan yang terasa seperti pulang. Genggaman tangan yang tak ingin kulepaskan. Ada sesuatu yang kubawa untukmu.',
-    action: 'Buka kejutannya', image: gift, caption: 'Ada hadiah di balik punggungku.',
-    alt: 'Ilustrasi pasangan yang saling memberi kejutan.',
-    note: 'Kalau pita di hadiahmu agak miring, itu karena aku mengikatnya tiga kali sambil membayangkan wajahmu.',
-    color: '#91472f', paper: '#f8eee0'
+    name: 'Hadiah', section: 'Sebuah kejutan kecil', title: 'Hari ini, aku', accent: 'bawa sesuatu untukmu.',
+    copy: 'Setelah semua rindu, bertemu kamu saja rasanya seperti pulang. Tapi hari ini, ada kejutan kecil yang kubawa.',
+    action: 'Buka kejutan kecil', image: gift, caption: 'Jangan intip dulu kadonya.',
+    alt: 'Pria berambut perak menawarkan hadiah kecil kepada perempuan berambut cokelat di taman berbunga pink.',
+    note: 'Kalau pitanya agak miring, itu karena aku mengikatnya tiga kali sambil membayangkan wajahmu.'
   },
   {
-    name: 'Harapan', thumbnail: cakeThumb, section: 'Make a wish', title: 'Bunga untukmu,', accent: 'dan satu harapan.',
+    name: 'Harapan', section: 'Satu harapan untuk Fadilla', title: 'Sebelum lilinnya padam,', accent: 'buat satu harapan.',
     copy: 'Pilih bunga kesukaanmu dan rangkai sesuka hati. Setelah buketmu siap, ada lilin dan sepucuk surat yang menunggu.',
-    action: 'Rangkai buket untukmu', image: cake, caption: 'Satu harapan sebelum lilin padam.',
-    alt: 'Ilustrasi kejutan ulang tahun dengan kue dan bunga.',
-    note: 'Yang paling ingin kudoakan tahun ini sederhana. Semoga selalu ada waktu untuk hal-hal kecil yang bikin kamu bahagia.',
-    color: '#894052', paper: '#f8eeeb'
+    action: 'Rangkai buket untuk Fadilla', image: cake, caption: 'Satu harapan di bawah sakura.',
+    alt: 'Fadilla membuat harapan di depan kue ulang tahun kecil dan buket bunga pink di taman sakura.',
+    note: 'Yang paling ingin kudoakan tahun ini sederhana. Semoga selalu ada waktu untuk hal-hal kecil yang bikin kamu bahagia.'
   },
   {
-    name: 'Terbangun', thumbnail: wakingThumb, section: 'Pagi setelah mimpi itu', title: 'Yah, hampir', accent: 'jadi kenyataan!',
-    copy: 'Belum sempat ciuman, kita malah terbangun dengan rambut acak-acakan. Untung ulang tahunmu bukan mimpi. Aku sayang kamu.',
-    action: 'Putar lagi mimpi kita', image: waking, caption: 'Sampai ketemu di pagi berikutnya.',
-    alt: 'Ilustrasi pagi yang hangat setelah mimpi ulang tahun.',
-    note: 'P.S. Kalau nanti malam ceritanya berlanjut, aku pesan tempat di sebelahmu lagi, ya.',
-    color: '#7e4a37', paper: '#f7f1df'
+    name: 'Pagi', section: 'Pagi setelah mimpi itu', title: 'Paginya tiba,', accent: 'sayangku tetap tinggal.',
+    copy: 'Belum sempat mimpinya panjang, kita malah terbangun dengan rambut acak-acakan. Untung ulang tahunmu bukan mimpi. Aku sayang kamu.',
+    action: 'Putar lagi dari awal', image: waking, caption: 'Pagi membawa kita kembali.',
+    alt: 'Pasangan tertawa setelah bangun di sofa pada pagi hari, dengan langit biru dan bunga sakura di luar jendela.',
+    note: 'P.S. Kalau nanti malam ceritanya berlanjut, aku pesan tempat di sebelahmu lagi, ya.'
   }
 ];
