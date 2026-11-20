@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {ArrowDown, ArrowUp, Check, Download, Flower2, Layers, Mail, Plus, Redo2, RotateCcw, RotateCw, Shuffle, Trash2, Undo2, Upload, X} from 'lucide-react';
+import {ArrowDown, ArrowUp, Check, Download, Flower2, Heart, Layers, Mail, Plus, Redo2, RotateCcw, RotateCw, Shuffle, Trash2, Undo2, Upload, X} from 'lucide-react';
 import {useBouquetPostcard} from './bouquetPostcard.js';
 import roseImage from '../assets/bouquet/rose.png';
 import tulipImage from '../assets/bouquet/tulip.png';
@@ -17,6 +17,7 @@ import './InteractiveBouquet.css';
 
 const STORAGE_KEY = 'ultah.interactive-bouquet.v1';
 const MAX_FLOWERS = 16;
+const revealFlowerArt = [roseImage, tulipImage, carnationImage, fillerImage, leafPairImage];
 const toolPanels = [
   {id: 'flowers', label: 'Bunga', Icon: Flower2},
   {id: 'wrap', label: 'Bungkus', Icon: Layers},
@@ -262,7 +263,7 @@ function StemArtwork({curve, flower, index}) {
   });
 }
 
-function FlowerArtwork({flower}) {
+function FlowerArtwork({flower, bloomDelay = 0}) {
   const image = flowerImages[flower.type];
   const filter = flowerFilters[flower.color];
   const artwork = {
@@ -273,7 +274,7 @@ function FlowerArtwork({flower}) {
   }[flower.type];
   return (
     <g transform={'rotate(' + flower.rotation + ') scale(' + flower.scale + ')'}>
-      <g className="bouquet-flower-sway">
+      <g className="bouquet-flower-sway" style={{'--bouquet-bloom-delay': bloomDelay + 'ms'}}>
         <image
           href={image}
           x={artwork.x}
@@ -287,6 +288,61 @@ function FlowerArtwork({flower}) {
         />
       </g>
     </g>
+  );
+}
+
+function BouquetIllustration({arrangement, flowers, selectedId, draggingId, settlingId, svgRef, interactive, onPointerMove, onPointerUp, onPointerCancel, onLostPointerCapture, onFlowerFocus, onFlowerPointerDown, onFlowerClick, onFlowerKeyDown}) {
+  return (
+    <svg
+      ref={svgRef}
+      className={'bouquet-svg' + (interactive ? '' : ' bouquet-svg-static')}
+      viewBox="110 -42 780 786"
+      role={interactive ? 'group' : undefined}
+      aria-label={interactive ? 'Buket bunga yang dapat diatur' : undefined}
+      aria-hidden={interactive ? undefined : 'true'}
+      onPointerMove={interactive ? onPointerMove : undefined}
+      onPointerUp={interactive ? onPointerUp : undefined}
+      onPointerCancel={interactive ? onPointerCancel : undefined}
+      onLostPointerCapture={interactive ? onLostPointerCapture : undefined}
+    >
+      {flowers.map((flower, index) => {
+        const curve = curveFor(flower, index);
+        const leafOne = bezierPoint(curve, 0.68);
+        return (
+          <g key={'stem-' + flower.id} className="bouquet-stem" aria-hidden="true">
+            <StemArtwork curve={curve} flower={flower} index={index} />
+            <Leaf x={leafOne.x} y={leafOne.y} mirrored={flower.x > 500} />
+          </g>
+        );
+      })}
+      <BouquetWrapper wrapper={arrangement.wrapper} ribbon={arrangement.ribbon} />
+      {flowers.map((flower, index) => {
+        const colors = petalColors[flower.color];
+        const isSelected = flower.id === selectedId;
+        const isDragging = flower.id === draggingId;
+        const isSettling = flower.id === settlingId;
+        return (
+          <g
+            key={flower.id}
+            className={'bouquet-flower-object ' + (isSelected ? 'is-selected ' : '') + (isDragging ? 'is-dragging ' : '') + (isSettling ? 'is-settling' : '')}
+            transform={'translate(' + flower.x + ' ' + flower.y + ')'}
+            role={interactive ? 'button' : undefined}
+            aria-label={interactive ? flowerTypes[flower.type] + ', ' + colors.label + '. Gunakan panah untuk memindahkan, R untuk memutar.' : undefined}
+            aria-pressed={interactive ? isSelected : undefined}
+            tabIndex={interactive ? 0 : undefined}
+            onFocus={interactive ? () => onFlowerFocus(flower.id) : undefined}
+            onPointerDown={interactive ? (event) => onFlowerPointerDown(event, flower) : undefined}
+            onClick={interactive ? () => onFlowerClick(flower.id) : undefined}
+            onKeyDown={interactive ? (event) => onFlowerKeyDown(event, flower) : undefined}
+          >
+            <circle className="bouquet-selection-ring" r="57" />
+            <FlowerArtwork flower={flower} bloomDelay={index * 86} />
+            <circle className="bouquet-flower-hit-area" r="55" />
+            <title>{flowerTypes[flower.type]} · {colors.label}</title>
+          </g>
+        );
+      })}
+    </svg>
   );
 }
 
@@ -344,6 +400,7 @@ function Swatches({items, selected, onChange, label}) {
 
 export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fadilla'}) {
   const [arrangement, setArrangement] = useState(loadArrangement);
+  const [celebrating, setCelebrating] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [draggingId, setDraggingId] = useState(null);
   const [settlingId, setSettlingId] = useState(null);
@@ -358,6 +415,9 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
   const svgRef = useRef(null);
   const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
+  const finishButtonRef = useRef(null);
+  const revealLetterRef = useRef(null);
+  const hasEnteredCelebration = useRef(false);
   const importInputRef = useRef(null);
   const editingMessageRef = useRef(false);
   const settleTimerRef = useRef(null);
@@ -365,6 +425,15 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
   const orderedFlowers = arrangement.flowers.slice().sort((a, b) => a.zIndex - b.zIndex);
   const canUndo = historyRef.current.past.length > 0;
   const canRedo = historyRef.current.future.length > 0;
+
+  useEffect(() => {
+    if (celebrating) {
+      hasEnteredCelebration.current = true;
+      revealLetterRef.current?.focus();
+    } else if (hasEnteredCelebration.current) {
+      finishButtonRef.current?.focus();
+    }
+  }, [celebrating]);
 
   useEffect(() => {
     arrangementRef.current = arrangement;
@@ -675,8 +744,44 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
     }
   };
 
+  const finishArrangement = () => setCelebrating(true);
+
   return (
-    <div className="bouquet-builder" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="bouquet-title">
+    <div className={'bouquet-builder' + (celebrating ? ' is-celebrating' : '')} ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={celebrating ? 'bouquet-reveal-title' : 'bouquet-title'}>
+      {celebrating ? (
+        <section className="bouquet-reveal" aria-label={'Kejutan buket untuk ' + recipient}>
+          <button ref={closeButtonRef} type="button" className="bouquet-close-button bouquet-reveal-close" aria-label="Tutup kejutan buket" onClick={onClose}><X size={19} /></button>
+          <div className="bouquet-gift-petals" aria-hidden="true">
+            {Array.from({length: 18}, (_, index) => <img key={index} src={revealFlowerArt[index % revealFlowerArt.length]} alt="" style={{'--petal-index': index, '--petal-left': (index * 37 % 100) + '%', '--petal-delay': (index % 8 * 145) + 'ms', '--petal-drift': (index % 2 ? 46 : -46) + 'px'}} />)}
+          </div>
+          <div className="bouquet-gift-stage">
+            <div className="bouquet-gift-backdrop" aria-hidden="true"><i /><i /><i /></div>
+            <div className="bouquet-gift-card">
+              <BouquetIllustration
+                arrangement={arrangement}
+                flowers={orderedFlowers}
+                interactive={false}
+              />
+              <div className="bouquet-gift-dedication">
+                <span>Untuk {recipient}</span>
+              </div>
+            </div>
+          </div>
+          <div className="bouquet-gift-note">
+            <p className="bouquet-gift-kicker"><i /> Satu kejutan kecil untuk {recipient}</p>
+            <h2 id="bouquet-reveal-title">Kelopaknya kamu pilih.<br /><em>Buketnya untukmu.</em></h2>
+            <p className="bouquet-gift-copy">Setiap bunga kamu rangkai sendiri. Sekarang biarkan buket ini menyampaikan yang ingin kuucapkan.</p>
+            <p className="bouquet-gift-message">{arrangement.message.trim() || 'Semoga tahun barumu penuh hal-hal indah, tawa yang lama, dan kasih sayang sebanyak bunga di buket ini.'}</p>
+            <p className="bouquet-gift-signature">Dengan seluruh sayangku <Heart size={15} fill="currentColor" /></p>
+            <div className="bouquet-gift-actions">
+              <button ref={revealLetterRef} type="button" className="bouquet-finish-button bouquet-letter-button" onClick={onComplete}>Baca surat ulang tahunmu <Mail size={17} /></button>
+              <button type="button" className="bouquet-return-button" onClick={() => setCelebrating(false)}><RotateCcw size={15} /> Mau merapikan lagi</button>
+            </div>
+          </div>
+          <span className="bouquet-reveal-status" role="status" aria-live="polite">Buket untuk {recipient} selesai dirangkai. Kejutan kecil sudah menunggu.</span>
+        </section>
+      ) : (
+        <>
       <header className="bouquet-builder-header">
         <div className="bouquet-builder-heading">
           <button ref={closeButtonRef} type="button" className="bouquet-close-button" aria-label="Tutup perangkai buket" onClick={onClose}><X size={19} /></button>
@@ -687,7 +792,7 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
         <div className="bouquet-header-actions" aria-label="Aksi susunan">
           <button type="button" className="bouquet-icon-button" aria-label="Urungkan" title="Urungkan" disabled={!canUndo} onClick={undo}><Undo2 size={18} /></button>
           <button type="button" className="bouquet-icon-button" aria-label="Ulangi" title="Ulangi" disabled={!canRedo} onClick={redo}><Redo2 size={18} /></button>
-          <button type="button" className="bouquet-finish-button" onClick={onComplete}><Check size={17} /><span>Selesai</span></button>
+          <button ref={finishButtonRef} type="button" className="bouquet-finish-button" onClick={finishArrangement}><Check size={17} /><span>Selesai</span></button>
         </div>
       </header>
 
@@ -700,55 +805,23 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
           <div className="bouquet-canvas">
             <div className="bouquet-presentation">
             {paletteStep > 0 && <div key={paletteStep} className="bouquet-flourish" aria-hidden="true">{Array.from({length: 8}, (_, i) => <img key={i} src={i % 2 ? fillerImage : leafPairImage} alt="" style={{'--i': i, '--angle': (i * 45) + 'deg'}} />)}</div>}
-            <svg
-              ref={svgRef}
-              className="bouquet-svg"
-              viewBox="110 -42 780 786"
-              role="group"
-              aria-label="Buket bunga yang dapat diatur"
+            <BouquetIllustration
+              arrangement={arrangement}
+              flowers={orderedFlowers}
+              selectedId={selectedId}
+              draggingId={draggingId}
+              settlingId={settlingId}
+              svgRef={svgRef}
+              interactive
               onPointerMove={moveDrag}
               onPointerUp={finishDrag}
               onPointerCancel={finishDrag}
               onLostPointerCapture={finishDrag}
-            >
-              {orderedFlowers.map((flower, index) => {
-                const curve = curveFor(flower, index);
-                const leafOne = bezierPoint(curve, 0.68);
-                return (
-                  <g key={'stem-' + flower.id} className="bouquet-stem" aria-hidden="true">
-                    <StemArtwork curve={curve} flower={flower} index={index} />
-                    <Leaf x={leafOne.x} y={leafOne.y} mirrored={flower.x > 500} />
-                  </g>
-                );
-              })}
-              <BouquetWrapper wrapper={arrangement.wrapper} ribbon={arrangement.ribbon} />
-              {orderedFlowers.map((flower, index) => {
-                const colors = petalColors[flower.color];
-                const isSelected = flower.id === selectedId;
-                const isDragging = flower.id === draggingId;
-                const isSettling = flower.id === settlingId;
-                return (
-                  <g
-                    key={flower.id}
-                    className={'bouquet-flower-object ' + (isSelected ? 'is-selected ' : '') + (isDragging ? 'is-dragging ' : '') + (isSettling ? 'is-settling' : '')}
-                    transform={'translate(' + flower.x + ' ' + flower.y + ')'}
-                    role="button"
-                    aria-label={flowerTypes[flower.type] + ', ' + colors.label + '. Gunakan panah untuk memindahkan, R untuk memutar.'}
-                    aria-pressed={isSelected}
-                    tabIndex="0"
-                    onFocus={() => setSelectedId(flower.id)}
-                    onPointerDown={(event) => beginDrag(event, flower)}
-                    onClick={() => setSelectedId(flower.id)}
-                    onKeyDown={(event) => handleFlowerKey(event, flower)}
-                  >
-                    <circle className="bouquet-selection-ring" r="57" />
-                    <FlowerArtwork flower={flower} />
-                    <circle className="bouquet-flower-hit-area" r="55" />
-                    <title>{flowerTypes[flower.type]} · {colors.label}</title>
-                  </g>
-                );
-              })}
-            </svg>
+              onFlowerFocus={setSelectedId}
+              onFlowerPointerDown={beginDrag}
+              onFlowerClick={setSelectedId}
+              onFlowerKeyDown={handleFlowerKey}
+            />
             <div className="bouquet-dedication">
               <span>Untuk {recipient}</span>
               {panel === 'card' && arrangement.message && <p>{arrangement.message}</p>}
@@ -860,6 +933,8 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
           <p role="status" aria-live="polite" className="bouquet-live-message">{importMessage}</p>
         </aside>
       </div>
+        </>
+      )}
     </div>
   );
 }

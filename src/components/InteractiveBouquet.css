@@ -17,6 +17,7 @@
   font: 500 14px/1.45 'DM Sans', sans-serif;
   text-align: left;
 }
+.bouquet-builder.is-celebrating { grid-template-rows:minmax(0,1fr); }
 .bouquet-builder *, .bouquet-builder *::before, .bouquet-builder *::after { box-sizing: border-box; }
 .bouquet-builder button { color: inherit; font: inherit; -webkit-tap-highlight-color: transparent; }
 .bouquet-builder button:disabled { opacity: .38; cursor: default; }
@@ -124,11 +125,115 @@
 .bouquet-live-message { margin:0; padding:12px clamp(17px,2.2vw,33px); color:var(--b-muted); font-size:12px; }
 .bouquet-live-message:empty { padding:0; }
 
+.bouquet-reveal {
+  --b-gift-forest:#244b40;
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(0,1.08fr) minmax(350px,.92fr);
+  min-width:0;
+  min-height:0;
+  overflow:hidden;
+  background:var(--b-gift-forest);
+  isolation:isolate;
+}
+.bouquet-reveal-close { position:absolute; z-index:4; top:max(18px,env(safe-area-inset-top)); right:max(18px,env(safe-area-inset-right)); color:#fff9ed; border-color:#fff9ed7a; }
+.bouquet-reveal-close:hover { color:var(--b-ink); background:#fff9ed; }
+.bouquet-gift-stage {
+  position:relative;
+  display:grid;
+  place-items:center;
+  min-width:0;
+  min-height:0;
+  padding:clamp(42px,6vh,82px) clamp(20px,5vw,86px);
+  overflow:hidden;
+  background-color:var(--b-gift-forest);
+  background-image:repeating-linear-gradient(90deg,transparent 0 63px,#fff6e90d 63px 64px),repeating-linear-gradient(0deg,transparent 0 63px,#fff6e90d 63px 64px);
+}
+.bouquet-gift-backdrop { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+.bouquet-gift-backdrop i { position:absolute; width:clamp(130px,21vw,340px); aspect-ratio:1; border:1px solid #fff8e314; border-radius:50%; }
+.bouquet-gift-backdrop i:first-child { left:-16%; top:-25%; }
+.bouquet-gift-backdrop i:nth-child(2) { right:-16%; bottom:-30%; }
+.bouquet-gift-backdrop i:nth-child(3) { left:34%; bottom:-58%; width:clamp(100px,14vw,230px); }
+.bouquet-gift-card {
+  position:relative;
+  z-index:1;
+  display:grid;
+  grid-template-rows:minmax(0,1fr) auto;
+  width:min(100%, min(690px, 77vh));
+  aspect-ratio:1.04;
+  min-width:0;
+  padding:clamp(11px,1.5vw,22px);
+  color:#73364b;
+  background:radial-gradient(ellipse at 52% 42%,#fffcf3 8%,transparent 67%),#f5e9d6;
+  box-shadow:0 25px 50px #102c2370,5px 5px 0 #cdbb9b,9px 9px 0 #173b3159;
+  animation:bouquet-gift-arrive .72s cubic-bezier(.2,.78,.2,1) both;
+}
+.bouquet-gift-card::before { content:''; position:absolute; z-index:1; inset:8px; border:1px solid #9e515d63; outline:1px solid #9e515d33; outline-offset:-4px; pointer-events:none; }
+.bouquet-gift-card .bouquet-svg { width:100%; height:100%; }
+.bouquet-svg-static { pointer-events:none; }
+.bouquet-gift-dedication { padding:2px 8px 1px; text-align:center; }
+.bouquet-gift-dedication span { font:600 clamp(26px,3.2vw,43px)/1 'Caveat','Segoe Print',cursive; }
+.bouquet-gift-dedication p { max-width:46ch; margin:6px auto 2px; overflow-wrap:anywhere; font:500 clamp(13px,1.1vw,16px)/1.35 'Cormorant Garamond',Georgia,serif; }
+.bouquet-svg-static .bouquet-flower-sway { opacity:0; transform:scale(.22); animation:bouquet-gift-bloom .76s cubic-bezier(.17,.85,.25,1.12) calc(240ms + var(--bouquet-bloom-delay)) both; }
+.bouquet-gift-note {
+  position:relative;
+  z-index:2;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:flex-start;
+  min-width:0;
+  max-height:100%;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding:clamp(35px,6vw,86px) clamp(26px,6vw,96px);
+  color:var(--b-ink);
+  background:#fff9ed;
+  box-shadow:-12px 0 32px #142b2340;
+  animation:bouquet-gift-note-in .58s ease-out .2s both;
+}
+.bouquet-gift-kicker { display:flex; align-items:center; gap:10px; margin:0 0 24px; color:#842e4a; font-size:12px; font-weight:600; letter-spacing:.035em; }
+.bouquet-gift-kicker i { width:9px; height:9px; border-radius:50%; background:#a3435c; }
+.bouquet-gift-note h2 { max-width:12ch; margin:0; color:#3d2230; font:500 clamp(39px,5.35vw,78px)/.97 'Cormorant Garamond',Georgia,serif; letter-spacing:-.04em; }
+.bouquet-gift-note h2 em { color:#842e4a; font-weight:400; }
+.bouquet-gift-copy { max-width:38ch; margin:23px 0 0; color:#765d60; font-size:16px; line-height:1.6; }
+.bouquet-gift-message { max-width:38ch; margin:18px 0 0; color:#3d2230; font:italic 400 clamp(21px,2vw,29px)/1.25 'Cormorant Garamond',Georgia,serif; }
+.bouquet-gift-signature { display:flex; align-items:center; gap:8px; margin:15px 0 0; color:#842e4a; font:600 23px/1.1 'Caveat','Segoe Print',cursive; }
+.bouquet-gift-actions { display:flex; align-items:center; flex-wrap:wrap; gap:10px 18px; margin-top:30px; }
+.bouquet-letter-button { min-height:48px!important; padding:10px 18px!important; font-size:14px; }
+.bouquet-return-button { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:46px; padding:9px 4px; color:#693d4b; border:0; background:transparent; text-decoration:underline; text-decoration-color:#ae8f90; text-underline-offset:4px; }
+.bouquet-return-button:hover { color:#842e4a; }
+.bouquet-gift-petals { position:absolute; z-index:3; inset:0; overflow:hidden; pointer-events:none; }
+.bouquet-gift-petals img { position:absolute; top:-9vh; left:var(--petal-left); width:clamp(19px,2.4vw,38px); height:clamp(19px,2.4vw,38px); object-fit:contain; opacity:0; filter:drop-shadow(0 2px 2px #26132520); animation:bouquet-gift-petal-fall 4.8s cubic-bezier(.32,.04,.68,.94) var(--petal-delay) both; }
+.bouquet-reveal-status { position:absolute; width:1px; height:1px; clip-path:inset(50%); overflow:hidden; white-space:nowrap; }
+
 @keyframes bouquet-settle { 0% { transform:rotate(-13deg) scale(.83); } 43% { transform:rotate(5deg) scale(1.06); } 75% { transform:rotate(-2deg); } 100% { transform:none; } }
 @keyframes bouquet-scatter { 0% { opacity:0; transform:rotate(var(--angle)) translateY(-20px) scale(.5); } 24% { opacity:.94; } 100% { opacity:0; transform:rotate(var(--angle)) translateY(-165px) rotate(80deg) scale(.68); } }
 @keyframes bouquet-tool-in { from { opacity:.4; transform:translateY(4px); } to { opacity:1; transform:none; } }
+@keyframes bouquet-gift-arrive { from { opacity:0; transform:translateY(32px) scale(.86) rotate(-2deg); } to { opacity:1; transform:translateY(0) scale(1) rotate(0); } }
+@keyframes bouquet-gift-note-in { from { opacity:0; transform:translateX(18px); } to { opacity:1; transform:translateX(0); } }
+@keyframes bouquet-gift-bloom { 0% { opacity:0; transform:scale(.22); } 70% { opacity:1; transform:scale(1.06); } 100% { opacity:1; transform:scale(1); } }
+@keyframes bouquet-gift-petal-fall { 10% { opacity:.92; } to { opacity:0; transform:translate3d(var(--petal-drift),108vh,0) rotate(330deg); } }
 
 @media (max-width:740px) and (orientation:portrait) {
+  .bouquet-reveal { grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(245px, .9fr) minmax(0,1.1fr); }
+  .bouquet-reveal-close { top:max(10px,env(safe-area-inset-top)); right:max(12px,env(safe-area-inset-right)); width:39px; height:39px; background:#173d32b5; }
+  .bouquet-gift-stage { padding:42px 20px 12px; }
+  .bouquet-gift-card { width:min(100%, 44vh, 430px); height:min(100%, 44vh, 430px); padding:8px; }
+  .bouquet-gift-card::before { inset:4px; outline-offset:-3px; }
+  .bouquet-gift-dedication { padding:0 4px; }
+  .bouquet-gift-dedication span { font-size:26px; }
+  .bouquet-gift-dedication p { margin:2px auto 0; font-size:13px; }
+  .bouquet-gift-note { justify-content:flex-start; padding:19px clamp(20px,6vw,32px) max(20px,env(safe-area-inset-bottom)); box-shadow:0 -7px 20px #142b2324; }
+  .bouquet-gift-kicker { margin:0 0 10px; font-size:11px; }
+  .bouquet-gift-note h2 { max-width:15ch; font-size:clamp(35px,9.5vw,48px); line-height:.98; }
+  .bouquet-gift-copy { margin-top:11px; font-size:14px; line-height:1.45; }
+  .bouquet-gift-message { margin-top:10px; font-size:21px; line-height:1.2; }
+  .bouquet-gift-signature { margin-top:7px; font-size:20px; }
+  .bouquet-gift-actions { gap:6px 14px; margin-top:13px; }
+  .bouquet-letter-button { min-height:46px!important; }
+  .bouquet-return-button { min-height:42px; }
+  .bouquet-gift-petals img { width:24px; height:24px; }
   .bouquet-builder-header { padding:8px 12px; }
   .bouquet-builder-heading { gap:8px; }
   .bouquet-builder-heading h2 { font-size:clamp(20px,6vw,27px); white-space:nowrap; }
@@ -167,4 +272,6 @@
 @media (prefers-reduced-motion: reduce) {
   .bouquet-builder *, .bouquet-builder *::before, .bouquet-builder *::after { animation:none !important; transition:none !important; }
   .bouquet-flourish { display:none; }
+  .bouquet-svg-static .bouquet-flower-sway { opacity:1; transform:none; }
+  .bouquet-gift-petals { display:none; }
 }

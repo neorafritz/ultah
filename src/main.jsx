@@ -131,7 +131,7 @@ function App() {
   const completeBouquet = useCallback(() => {
     setBouquetMade(true);
     try { localStorage.setItem('ultah.bouquet-finished','yes'); } catch {}
-    setOverlay(null);
+    setOverlay('letter');
   }, []);
 
   useEffect(() => {
