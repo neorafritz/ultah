@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {ArrowDown, ArrowUp, Check, Download, Flower2, Plus, Redo2, RotateCcw, RotateCw, Trash2, Undo2, Upload, X} from 'lucide-react';
+import {ArrowDown, ArrowUp, Check, Download, Flower2, Layers, Mail, Plus, Redo2, RotateCcw, RotateCw, Shuffle, Trash2, Undo2, Upload, X} from 'lucide-react';
+import {useBouquetPostcard} from './bouquetPostcard.js';
 import roseImage from '../assets/bouquet/rose.png';
 import tulipImage from '../assets/bouquet/tulip.png';
 import carnationImage from '../assets/bouquet/carnation.png';
@@ -16,6 +17,17 @@ import './InteractiveBouquet.css';
 
 const STORAGE_KEY = 'ultah.interactive-bouquet.v1';
 const MAX_FLOWERS = 16;
+const toolPanels = [
+  {id: 'flowers', label: 'Bunga', Icon: Flower2},
+  {id: 'wrap', label: 'Bungkus', Icon: Layers},
+  {id: 'card', label: 'Kartu', Icon: Mail}
+];
+
+const palettes = [
+  {name: 'Kebun persik', petals: ['ivory', 'peach', 'coral', 'blush'], paper: 'sage', fold: 'petal', ribbon: 'cream', bow: 'slim'},
+  {name: 'Senja mawar', petals: ['rose', 'blush', 'peach', 'rose'], paper: 'cream', fold: 'pleated', ribbon: 'cherry', bow: 'double'},
+  {name: 'Embun pagi', petals: ['blush', 'ivory', 'peach', 'ivory'], paper: 'mauve', fold: 'folded', ribbon: 'mauve', bow: 'classic'}
+];
 
 const flowerTypes = {
   rose: 'Mawar',
@@ -57,9 +69,9 @@ const flowerImages = {
 const flowerFilters = {
   blush: 'saturate(.88) brightness(1.04)',
   rose: 'saturate(1.22) brightness(.87) contrast(1.04)',
-  coral: 'hue-rotate(-22deg) saturate(.92) brightness(1.04)',
-  peach: 'hue-rotate(-34deg) saturate(.78) brightness(1.08)',
-  ivory: 'grayscale(.72) sepia(.33) saturate(.78) brightness(1.18)'
+  coral: 'hue-rotate(13deg) saturate(1.12) brightness(1.04)',
+  peach: 'hue-rotate(23deg) saturate(.84) brightness(1.09)',
+  ivory: 'grayscale(.92) sepia(.52) saturate(.85) brightness(1.26)'
 };
 
 const wrapperImages = {
@@ -116,7 +128,12 @@ const defaultFlowers = [
 
 function createDefaultArrangement() {
   return {
-    flowers: defaultFlowers.map((flower) => ({...flower})),
+    flowers: defaultFlowers.map(flower => ({
+      ...flower,
+      x: 500 + (flower.x - 500) * .84,
+      y: 310 + (flower.y - 310) * .75,
+    })),
+    message: '',
     wrapper: {color: 'blush', style: 'folded'},
     ribbon: {color: 'rose', style: 'classic', visible: true}
   };
@@ -158,6 +175,7 @@ function normalizeArrangement(value) {
   const ribbonStyle = value.ribbon && ribbonStyles.some((item) => item.id === value.ribbon.style) ? value.ribbon.style : 'classic';
   return {
     flowers,
+    message: typeof value.message === 'string' ? value.message.slice(0, 100) : '',
     wrapper: {color: wrapperColor, style: wrapperStyle},
     ribbon: {color: ribbonColor, style: ribbonStyle, visible: value.ribbon?.visible !== false}
   };
@@ -199,9 +217,11 @@ function bezierPoint(curve, t) {
   };
 }
 
-function Leaf({x, y}) {
+function Leaf({x, y, mirrored = false}) {
   return (
-    <image href={leafPairImage} x={x - 31} y={y - 48} width="62" height="50" className="bouquet-leaf" aria-hidden="true" />
+    <g transform={'translate(' + x + ' ' + y + ') scale(' + (mirrored ? -1 : 1) + ' 1)'}>
+      <image href={leafPairImage} x="-58" y="-74" width="90" height="77" className="bouquet-leaf" aria-hidden="true" />
+    </g>
   );
 }
 
@@ -246,10 +266,10 @@ function FlowerArtwork({flower}) {
   const image = flowerImages[flower.type];
   const filter = flowerFilters[flower.color];
   const artwork = {
-    rose: {x: -53, y: -50, width: 106, height: 100},
-    tulip: {x: -47, y: -71, width: 94, height: 108},
-    carnation: {x: -54, y: -51, width: 108, height: 102},
-    filler: {x: -38, y: -30, width: 76, height: 60}
+    rose: {x: -72, y: -69, width: 144, height: 138},
+    tulip: {x: -56, y: -81, width: 112, height: 123},
+    carnation: {x: -71, y: -70, width: 142, height: 140},
+    filler: {x: -51, y: -42, width: 102, height: 84}
   }[flower.type];
   return (
     <g transform={'rotate(' + flower.rotation + ') scale(' + flower.scale + ')'}>
@@ -289,7 +309,7 @@ function BouquetWrapper({wrapper, ribbon}) {
         <image
           href={ribbonImages[ribbon.style]}
           x="370"
-          y="475"
+          y={ribbon.style === 'slim' ? 548 : 534}
           width="260"
           height="182"
           preserveAspectRatio="none"
@@ -329,6 +349,9 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
   const [settlingId, setSettlingId] = useState(null);
   const [historyVersion, setHistoryVersion] = useState(0);
   const [importMessage, setImportMessage] = useState('');
+  const [panel, setPanel] = useState('flowers');
+  const [paletteStep, setPaletteStep] = useState(0);
+  const {saving, savePostcard} = useBouquetPostcard();
   const arrangementRef = useRef(arrangement);
   const historyRef = useRef({past: [], future: []});
   const dragRef = useRef(null);
@@ -336,6 +359,7 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
   const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
   const importInputRef = useRef(null);
+  const editingMessageRef = useRef(false);
   const settleTimerRef = useRef(null);
   const currentFlower = arrangement.flowers.find((flower) => flower.id === selectedId) || null;
   const orderedFlowers = arrangement.flowers.slice().sort((a, b) => a.zIndex - b.zIndex);
@@ -356,7 +380,7 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
         return;
       }
       if (event.key !== 'Tab' || !dialogRef.current) return;
-      const focusable = Array.from(dialogRef.current.querySelectorAll('button:not(:disabled):not([hidden]), input:not([type="hidden"]):not([hidden]), [tabindex="0"]:not([hidden])'));
+      const focusable = Array.from(dialogRef.current.querySelectorAll('button:not(:disabled):not([hidden]), input:not([type="hidden"]):not([hidden]), textarea, [tabindex="0"]:not([hidden])'));
       if (!focusable.length) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
@@ -444,6 +468,10 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
     };
     publishChange({...current, flowers: [...current.flowers, flower]});
     setSelectedId(flower.id);
+    setSettlingId(flower.id);
+    clearTimeout(settleTimerRef.current);
+    settleTimerRef.current = setTimeout(() => setSettlingId(null), 720);
+    setImportMessage(flowerTypes[type] + ' ditambahkan.');
   };
 
   const removeSelectedFlower = () => {
@@ -491,6 +519,7 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
   };
 
   const beginDrag = (event, flower) => {
+    if (dragRef.current || event.button !== 0) return;
     event.preventDefault();
     event.stopPropagation();
     const point = toScenePoint(event);
@@ -624,20 +653,40 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
     setImportMessage('Susunan buket dikembalikan ke awal. Kamu bisa mengurungkannya.');
   };
 
+  const surprise = () => {
+    const current = arrangementRef.current;
+    const palette = palettes[paletteStep % palettes.length];
+    publishChange({
+      ...current,
+      flowers: current.flowers.map((flower, i) => ({...flower, color: palette.petals[i % palette.petals.length]})),
+      wrapper: {color: palette.paper, style: palette.fold},
+      ribbon: {...current.ribbon, color: palette.ribbon, style: palette.bow}
+    });
+    setPaletteStep(step => step + 1);
+    setImportMessage('Palet ' + palette.name.toLowerCase() + ' diterapkan.');
+  };
+
+  const downloadCard = async () => {
+    try {
+      await savePostcard(svgRef.current, recipient, arrangementRef.current.message);
+      setImportMessage('Kartu buket siap diunduh.');
+    } catch {
+      setImportMessage('Gambar belum dapat disimpan. Coba unduh lagi setelah buket tampil.');
+    }
+  };
+
   return (
     <div className="bouquet-builder" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="bouquet-title">
       <header className="bouquet-builder-header">
         <div className="bouquet-builder-heading">
           <button ref={closeButtonRef} type="button" className="bouquet-close-button" aria-label="Tutup perangkai buket" onClick={onClose}><X size={19} /></button>
           <div>
-            <span className="bouquet-eyebrow">BUKET DIGITAL · UNTUK {recipient.toUpperCase()}</span>
-            <h2 id="bouquet-title">Rangkai bunga untukmu</h2>
+            <h2 id="bouquet-title">Studio bunga</h2>
           </div>
         </div>
         <div className="bouquet-header-actions" aria-label="Aksi susunan">
           <button type="button" className="bouquet-icon-button" aria-label="Urungkan" title="Urungkan" disabled={!canUndo} onClick={undo}><Undo2 size={18} /></button>
           <button type="button" className="bouquet-icon-button" aria-label="Ulangi" title="Ulangi" disabled={!canRedo} onClick={redo}><Redo2 size={18} /></button>
-          <button type="button" className="bouquet-icon-button" aria-label="Atur ulang buket" title="Atur ulang buket" onClick={resetArrangement}><RotateCcw size={17} /></button>
           <button type="button" className="bouquet-finish-button" onClick={onComplete}><Check size={17} /><span>Selesai</span></button>
         </div>
       </header>
@@ -645,14 +694,16 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
       <div className="bouquet-workspace">
         <main className="bouquet-stage-area" aria-label="Area merangkai bunga">
           <div className="bouquet-stage-caption">
-            <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3v18M7 8l5-5 5 5M7 16l5 5 5-5" /></svg> Seret satu bunga untuk mengatur posisinya</span>
-            <span className="bouquet-stage-count">{arrangement.flowers.length} bunga</span>
+            <span className="bouquet-stage-count">{arrangement.flowers.length} tangkai</span>
+            <button type="button" className="bouquet-surprise" onClick={surprise}><Shuffle size={15} /> Kejutkan aku</button>
           </div>
           <div className="bouquet-canvas">
+            <div className="bouquet-presentation">
+            {paletteStep > 0 && <div key={paletteStep} className="bouquet-flourish" aria-hidden="true">{Array.from({length: 8}, (_, i) => <img key={i} src={i % 2 ? fillerImage : leafPairImage} alt="" style={{'--i': i, '--angle': (i * 45) + 'deg'}} />)}</div>}
             <svg
               ref={svgRef}
               className="bouquet-svg"
-              viewBox="0 0 1000 680"
+              viewBox="110 -42 780 786"
               role="group"
               aria-label="Buket bunga yang dapat diatur"
               onPointerMove={moveDrag}
@@ -666,7 +717,7 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
                 return (
                   <g key={'stem-' + flower.id} className="bouquet-stem" aria-hidden="true">
                     <StemArtwork curve={curve} flower={flower} index={index} />
-                    <Leaf x={leafOne.x} y={leafOne.y} />
+                    <Leaf x={leafOne.x} y={leafOne.y} mirrored={flower.x > 500} />
                   </g>
                 );
               })}
@@ -685,6 +736,7 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
                     aria-label={flowerTypes[flower.type] + ', ' + colors.label + '. Gunakan panah untuk memindahkan, R untuk memutar.'}
                     aria-pressed={isSelected}
                     tabIndex="0"
+                    onFocus={() => setSelectedId(flower.id)}
                     onPointerDown={(event) => beginDrag(event, flower)}
                     onClick={() => setSelectedId(flower.id)}
                     onKeyDown={(event) => handleFlowerKey(event, flower)}
@@ -697,6 +749,11 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
                 );
               })}
             </svg>
+            <div className="bouquet-dedication">
+              <span>Untuk {recipient}</span>
+              {panel === 'card' && arrangement.message && <p>{arrangement.message}</p>}
+            </div>
+            </div>
           </div>
           <div className="bouquet-selection-bar" aria-live="polite">
             {currentFlower ? (
@@ -709,65 +766,98 @@ export default function InteractiveBouquet({onClose, onComplete, recipient = 'Fa
                 <button type="button" aria-label="Hapus bunga terpilih" title="Hapus bunga" disabled={arrangement.flowers.length <= 1} onClick={removeSelectedFlower}><Trash2 size={17} /></button>
               </>
             ) : (
-              <span>Pilih bunga untuk memutar, mengubah warna, atau menghapusnya.</span>
+              <span>Ketuk atau seret bunga untuk mengaturnya.</span>
             )}
           </div>
         </main>
 
         <aside className="bouquet-tools" aria-label="Pengaturan buket">
-          <section className="bouquet-tool-group">
-            <div className="bouquet-group-heading"><Flower2 size={17} /><h3>Pilih bunga</h3></div>
-            <p className="bouquet-help">Tambahkan satu per satu, lalu seret ke susunanmu.</p>
-            <div className="bouquet-library">
-              {Object.entries(flowerTypes).map(([type, label]) => (
-                <button key={type} type="button" className="bouquet-library-button" disabled={arrangement.flowers.length >= MAX_FLOWERS} onClick={() => addFlower(type)}>
-                  <span className={'bouquet-library-flower library-' + type} aria-hidden="true"><img src={flowerImages[type]} alt="" /></span>
-                  <span>{label}</span><Plus size={15} />
-                </button>
-              ))}
-            </div>
-            {arrangement.flowers.length >= MAX_FLOWERS && <p className="bouquet-help bouquet-limit-message">Buket sudah penuh. Hapus satu bunga untuk menambahkan lagi.</p>}
-          </section>
-
-          <section className="bouquet-tool-group">
-            <div className="bouquet-group-heading"><span className="bouquet-group-number">01</span><h3>Warna bunga</h3></div>
-            {currentFlower ? (
+          <div className="bouquet-panel-switch" role="group" aria-label="Pilih alat">
+            {toolPanels.map(({id, label, Icon}) => (
+              <button key={id} type="button" aria-pressed={panel === id} onClick={() => setPanel(id)}>
+                <Icon size={17} aria-hidden="true" />{label}
+              </button>
+            ))}
+          </div>
+          <div key={panel} className="bouquet-tool-page">
+            {panel === 'flowers' && (
               <>
-                <p className="bouquet-help">Untuk {flowerTypes[currentFlower.type].toLowerCase()} yang dipilih.</p>
-                <Swatches items={petalColors} selected={currentFlower.color} label="Warna bunga terpilih" onChange={(color) => changeSelectedFlower((flower) => ({...flower, color}))} />
+                <section className="bouquet-tool-group">
+                  <h3>Petik bungamu</h3>
+                  <p className="bouquet-help">Ketuk bunga untuk menambah satu tangkai.</p>
+                  <div className="bouquet-library">
+                    {Object.entries(flowerTypes).map(([type, label]) => (
+                      <button key={type} type="button" className={'bouquet-library-button library-' + type} aria-label={'Tambah ' + label.toLowerCase()} disabled={arrangement.flowers.length >= MAX_FLOWERS} onClick={() => addFlower(type)}>
+                        <img src={flowerImages[type]} alt="" draggable="false" />
+                        <span>{label}</span><Plus size={15} aria-hidden="true" />
+                      </button>
+                    ))}
+                  </div>
+                  {arrangement.flowers.length >= MAX_FLOWERS && <p className="bouquet-help">Sudah 16 tangkai. Lepas satu bunga untuk memetik lagi.</p>}
+                </section>
+                {currentFlower && (
+                  <section className="bouquet-tool-group">
+                    <h4>Warna {flowerTypes[currentFlower.type].toLowerCase()}</h4>
+                    <Swatches items={petalColors} selected={currentFlower.color} label="Warna bunga terpilih" onChange={(color) => changeSelectedFlower((flower) => ({...flower, color}))} />
+                  </section>
+                )}
               </>
-            ) : <p className="bouquet-help">Pilih salah satu bunga di buket lebih dulu.</p>}
-          </section>
-
-          <section className="bouquet-tool-group">
-            <div className="bouquet-group-heading"><span className="bouquet-group-number">02</span><h3>Kertas pembungkus</h3></div>
-            <Swatches items={wrapperColors} selected={arrangement.wrapper.color} label="Warna kertas pembungkus" onChange={(color) => changeWrapper('wrapper', {color})} />
-            <div className="bouquet-style-options" role="group" aria-label="Gaya lipatan kertas">
-              {wrapperStyles.map((style) => <button key={style.id} type="button" className={arrangement.wrapper.style === style.id ? 'is-active' : ''} aria-pressed={arrangement.wrapper.style === style.id} onClick={() => changeWrapper('wrapper', {style: style.id})}>{style.label}</button>)}
-            </div>
-          </section>
-
-          <section className="bouquet-tool-group">
-            <div className="bouquet-group-heading"><span className="bouquet-group-number">03</span><h3>Pita</h3></div>
-            <Swatches items={ribbonColors} selected={arrangement.ribbon.color} label="Warna pita" onChange={(color) => changeWrapper('ribbon', {color})} />
-            <div className="bouquet-style-options" role="group" aria-label="Gaya pita">
-              {ribbonStyles.map((style) => <button key={style.id} type="button" className={arrangement.ribbon.style === style.id ? 'is-active' : ''} aria-pressed={arrangement.ribbon.style === style.id} onClick={() => changeWrapper('ribbon', {style: style.id})}>{style.label}</button>)}
-            </div>
-            <button type="button" className="bouquet-ribbon-toggle" aria-pressed={arrangement.ribbon.visible} onClick={() => changeWrapper('ribbon', {visible: !arrangement.ribbon.visible})}>
-              {arrangement.ribbon.visible ? 'Lepas pita' : 'Pasang pita'}
-            </button>
-          </section>
-
-          <section className="bouquet-tool-group bouquet-file-actions">
-            <div className="bouquet-group-heading"><span className="bouquet-group-number">04</span><h3>Simpan susunan</h3></div>
-            <p className="bouquet-help">Buket tersimpan otomatis di perangkat ini. Kamu juga bisa mengunduh atau memuat file JSON.</p>
-            <div className="bouquet-file-buttons">
-              <button type="button" onClick={exportArrangement}><Download size={16} /> Unduh JSON</button>
-              <button type="button" onClick={() => importInputRef.current?.click()}><Upload size={16} /> Muat JSON</button>
-              <input ref={importInputRef} type="file" accept="application/json,.json" onChange={importArrangement} hidden />
-            </div>
-            <p className="bouquet-live-message" aria-live="polite">{importMessage || 'Gunakan Tab, Enter, dan tombol panah untuk mengatur bunga.'}</p>
-          </section>
+            )}
+            {panel === 'wrap' && (
+              <>
+                <section className="bouquet-tool-group">
+                  <h3>Kertas pembungkus</h3>
+                  <div className="bouquet-style-options" role="group" aria-label="Gaya lipatan kertas">
+                    {wrapperStyles.map(style => <button key={style.id} type="button" aria-pressed={arrangement.wrapper.style === style.id} onClick={() => changeWrapper('wrapper', {style: style.id})}><img src={wrapperImages[style.id]} alt="" />{style.label}</button>)}
+                  </div>
+                  <Swatches items={wrapperColors} selected={arrangement.wrapper.color} label="Warna kertas pembungkus" onChange={color => changeWrapper('wrapper', {color})} />
+                </section>
+                <section className="bouquet-tool-group">
+                  <div className="bouquet-heading-line"><h3>Pita</h3>
+                    <button type="button" className="bouquet-text-action" aria-pressed={arrangement.ribbon.visible} onClick={() => changeWrapper('ribbon', {visible: !arrangement.ribbon.visible})}>
+                      {arrangement.ribbon.visible ? 'Lepas pita' : 'Pasang pita'}
+                    </button>
+                  </div>
+                  <div className="bouquet-style-options" role="group" aria-label="Gaya pita">
+                    {ribbonStyles.map(style => <button key={style.id} type="button" aria-pressed={arrangement.ribbon.visible && arrangement.ribbon.style === style.id} onClick={() => changeWrapper('ribbon', {style: style.id, visible: true})}><img src={ribbonImages[style.id]} alt="" />{style.label}</button>)}
+                  </div>
+                  <Swatches items={ribbonColors} selected={arrangement.ribbon.color} label="Warna pita" onChange={color => changeWrapper('ribbon', {color, visible: true})} />
+                </section>
+              </>
+            )}
+            {panel === 'card' && (
+              <>
+                <section className="bouquet-tool-group">
+                  <h3>Kartu untuk {recipient}</h3>
+                  <label className="bouquet-help" htmlFor="bouquet-message">Pesan di bawah buket</label>
+                  <textarea id="bouquet-message" value={arrangement.message} maxLength={100} rows={3} placeholder={'Selamat ulang tahun, ' + recipient + '.'}
+                    onFocus={() => { editingMessageRef.current = false; }}
+                    onChange={event => {
+                      const next = {...arrangementRef.current, message: event.target.value};
+                      if (!editingMessageRef.current) {
+                        publishChange(next);
+                        editingMessageRef.current = true;
+                      } else {
+                        updateLiveArrangement(next);
+                        persistArrangement(next);
+                      }
+                    }} />
+                  <button className="bouquet-save-card" type="button" disabled={saving} onClick={downloadCard}><Download size={17} />{saving ? 'Menyiapkan gambar…' : 'Unduh kartu PNG'}</button>
+                </section>
+                <section className="bouquet-tool-group">
+                  <h4>Simpan susunan</h4>
+                  <p className="bouquet-help">Buket tersimpan di perangkat ini. Bawa file JSON untuk merangkainya lagi di perangkat lain.</p>
+                  <div className="bouquet-file-buttons">
+                    <button type="button" onClick={exportArrangement}><Download size={15} /> Unduh JSON</button>
+                    <button type="button" onClick={() => importInputRef.current?.click()}><Upload size={15} /> Muat JSON</button>
+                    <input ref={importInputRef} type="file" accept="application/json,.json" onChange={importArrangement} hidden />
+                  </div>
+                  <button type="button" className="bouquet-text-action bouquet-reset" onClick={resetArrangement}><RotateCcw size={14} /> Kembali ke buket awal</button>
+                </section>
+              </>
+            )}
+          </div>
+          <p role="status" aria-live="polite" className="bouquet-live-message">{importMessage}</p>
         </aside>
       </div>
     </div>

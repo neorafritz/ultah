@@ -1,138 +1,238 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Heart, Sparkles, Volume2, VolumeX, X} from 'lucide-react';
+import {ArrowLeft, ArrowRight, BookOpen, Cake, Flower2, Heart, Mail, Music2, RotateCcw, RotateCw, VolumeX, X} from 'lucide-react';
 import '@fontsource/caveat/latin-600.css';
 import '@fontsource/cormorant-garamond/latin-400.css';
 import '@fontsource/cormorant-garamond/latin-400-italic.css';
 import '@fontsource/dm-sans/latin-400.css';
 import '@fontsource/dm-sans/latin-500.css';
 import '@fontsource/dm-sans/latin-600.css';
-import apart from './assets/story/01-apart.webp';
-import dream from './assets/story/02-dream.webp';
-import reunion from './assets/story/03-reunion.webp';
-import gift from './assets/story/04-gift.webp';
-import cake from './assets/story/05-cake.webp';
-import waking from './assets/story/06-waking.webp';
 import InteractiveBouquet from './components/InteractiveBouquet.jsx';
+import bloom from './assets/bouquet/rose.png';
+import floret from './assets/bouquet/filler.png';
+import {chapters} from './chapters.js';
+import {useMusic} from './useMusic.js';
 import './style.css';
 
-const chapters=['Happy Birthday','Mimpi','Bertemu','Hadiah','Harapan','Terbangun'];
-const images=[apart,dream,reunion,gift,cake,waking];
-function useMusic(){
- const [playing,setPlaying]=useState(false),[unavailable,setUnavailable]=useState(false);
- const audio=useRef(null),timer=useRef(null);
- useEffect(()=>()=>{clearTimeout(timer.current);audio.current?.close()},[]);
- const toggle=async()=>{try{
-  clearTimeout(timer.current);
-  if(playing){await audio.current?.suspend();setPlaying(false);return}
-  const AC=window.AudioContext||window.webkitAudioContext;
-  if(!AC){setUnavailable(true);return}
-  if(audio.current?.currentTime>45){await audio.current.close();audio.current=null}
-  if(!audio.current){const ctx=new AC();audio.current=ctx;const notes=[261.63,329.63,392,523.25,440,392,329.63,293.66];for(let i=0;i<64;i++){const osc=ctx.createOscillator(),gain=ctx.createGain(),t=ctx.currentTime+i*.72;osc.type='sine';osc.frequency.value=notes[i%notes.length];gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(.04,t+.05);gain.gain.exponentialRampToValueAtTime(.001,t+1.5);osc.connect(gain);gain.connect(ctx.destination);osc.start(t);osc.stop(t+1.6)}}
-  await audio.current.resume();setPlaying(true);timer.current=setTimeout(()=>setPlaying(false),Math.max(0,(46-audio.current.currentTime)*1000));
- }catch{setPlaying(false);setUnavailable(true)}};
- return{playing,unavailable,toggle};
+const number = index => String(index + 1).padStart(2, '0');
+
+function ArtCard({chapter, index}) {
+  const [flipped, setFlipped] = useState(false);
+  const card = useRef(null);
+  const tilt = event => {
+    if (event.pointerType !== 'mouse' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    card.current.style.setProperty('--tilt', ((event.clientX - rect.left) / rect.width * 3 - 1.5) + 'deg');
+    card.current.style.setProperty('--lift', (1.5 - (event.clientY - rect.top) / rect.height * 3) + 'deg');
+  };
+  const reset = () => {
+    card.current.style.removeProperty('--tilt');
+    card.current.style.removeProperty('--lift');
+  };
+  return <div className="art-desk" onPointerMove={tilt} onPointerLeave={reset}>
+    <div className="postcard-stack" ref={card}>
+      <button className={'postcard' + (flipped ? ' turned' : '')} aria-pressed={flipped} aria-describedby={flipped ? 'postcard-note' : 'postcard-art'}
+        aria-label={flipped ? 'Lihat ilustrasi lagi' : 'Balik kartu untuk membaca catatan'} onClick={() => setFlipped(!flipped)}>
+        <span className="card-side card-front" aria-hidden={flipped}>
+          <span className="art-window">
+            <img id="postcard-art" src={chapter.image} alt={chapter.alt} fetchPriority={index === 0 ? 'high' : 'auto'}/>
+            {index < 3 && <span aria-hidden="true" className={'scene-motes motes-' + index}>{[0,1,2,3].map(i =>
+              <i key={i} style={{'--n':i}}>{index === 2 ? <img alt="" src={floret}/> : '✦'}</i>)}</span>}
+          </span>
+          <span className="card-caption"><span>{chapter.caption}</span><span className="flip-hint"><RotateCw size={15}/> Balik kartu</span></span>
+        </span>
+        <span className="card-side card-back" aria-hidden={!flipped}>
+          <span className="back-top">Kartu pos <span>{number(index)} / 06</span></span>
+          <span className="back-to">Untuk Fadilla,</span>
+          <span id="postcard-note" className="back-message">{chapter.note}</span>
+          <span className="back-bottom"><Heart size={19}/><span className="flip-hint"><RotateCcw size={15}/> Lihat ilustrasi</span></span>
+        </span>
+      </button>
+    </div>
+  </div>;
 }
-function LoveOverlay({onClose}){
- const close=useRef(null);
- useEffect(()=>{const old=document.activeElement;close.current?.focus();const key=e=>{if(e.key==='Escape')onClose();if(e.key==='Tab'){e.preventDefault();close.current?.focus()}};window.addEventListener('keydown',key);return()=>{window.removeEventListener('keydown',key);old?.focus()}},[onClose]);
- return <div className="love-overlay" onClick={onClose}>
-  <div className="love-note" role="dialog" aria-modal="true" aria-labelledby="love-title" onClick={e=>e.stopPropagation()}>
-   <button ref={close} className="love-close" onClick={onClose} aria-label="Tutup pesan cinta"><X size={20}/></button>
-   <Heart className="love-heart" size={30} strokeWidth={1.3}/>
-   <span className="love-kicker">SATU PESAN KECIL, DARI HATIKU</span>
-   <h2 id="love-title">Di antara semua mimpiku,<br/><em>memilikimu yang paling indah.</em></h2>
-   <p>Selamat ulang tahun, Fadilla. Semoga bahagiamu panjang—<br/>dan semoga aku selalu boleh jadi bagian dari ceritamu.</p>
-   <span className="love-signature">Dengan seluruh sayangku <Heart size={14}/></span>
-  </div>
- </div>;
+
+function BirthdayLetter({alreadyRead, onRead, onClose, onNext}) {
+  const dialog = useRef(null);
+  const firstOpening = useRef(!alreadyRead);
+  const [opened, setOpened] = useState(alreadyRead);
+  useEffect(() => {
+    const previous = document.activeElement;
+    const node = dialog.current;
+    node.showModal();
+    return () => { node.close(); previous?.focus?.({preventScroll:true}); };
+  }, []);
+  const reveal = () => { setOpened(true); onRead(); };
+  return <dialog ref={dialog} className="letter-dialog" aria-labelledby="letter-title"
+    onCancel={event => { event.preventDefault(); onClose(); }}
+    onClick={event => { if (event.target === dialog.current) onClose(); }}>
+    <article className={'letter-sheet' + (opened ? ' opened' : '')}>
+      <button className="round-action close-letter" aria-label="Tutup surat" onClick={onClose}><X size={18}/></button>
+      <span className="letter-symbol" aria-hidden="true">{opened ? <Mail/> : <span className="birthday-candle"><i/></span>}</span>
+      <div key={String(opened)} className="letter-content" aria-live="polite">
+        <span className="microtype">{opened ? 'Surat untuk Fadilla' : 'Lilin ulang tahunmu'}</span>
+        <h2 id="letter-title">{opened ? <>Di antara semua mimpiku,<br/><em>memilikimu yang paling indah.</em></> : <>Pejamkan mata,<br/><em>buat satu harapan.</em></>}</h2>
+        <p>{opened ? 'Selamat ulang tahun, Fadilla. Semoga bahagiamu panjang, dan semoga aku selalu boleh jadi bagian dari ceritamu.' : 'Simpan harapan itu untuk dirimu sendiri. Kalau sudah siap, padamkan lilinnya.'}</p>
+        {opened && <span className="letter-sign">Dengan seluruh sayangku ♡</span>}
+        <button className="primary-action" onClick={opened ? onNext : reveal}>{opened ? 'Lanjut ke pagi' : 'Tiup lilinnya'} <ArrowRight size={17}/></button>
+      </div>
+      {opened && firstOpening.current && <div className="letter-sparks" aria-hidden="true">{Array.from({length:12}, (_, i) => <i key={i} style={{'--i':i}}>{i % 2 ? '✦' : '♡'}</i>)}</div>}
+    </article>
+  </dialog>;
 }
-function App(){
- const [scene,setScene]=useState(0),[direction,setDirection]=useState(1),[candlesOut,setCandlesOut]=useState(false),[loveOpen,setLoveOpen]=useState(false),[confetti,setConfetti]=useState(false),[bouquetOpen,setBouquetOpen]=useState(false),[bouquetMade,setBouquetMade]=useState(false);
- const{playing,unavailable,toggle}=useMusic();
- const active=useRef(0),cooldown=useRef(0),touch=useRef(null),celebrationTimer=useRef(null);
- const closeLove=useCallback(()=>setLoveOpen(false),[]);
- const closeBouquet=useCallback(()=>setBouquetOpen(false),[]);
- const completeBouquet=useCallback(()=>{setBouquetMade(true);setBouquetOpen(false)},[]);
- const go=useCallback(next=>{const n=Math.max(0,Math.min(chapters.length-1,next));if(n===active.current||performance.now()<cooldown.current)return;setDirection(n>active.current?1:-1);active.current=n;cooldown.current=performance.now()+800;setScene(n)},[]);
- useEffect(()=>{images.forEach(src=>{const pre=new Image();pre.src=src})},[]);
- useEffect(()=>{
-  let delta=0,last=0;
-  const wheel=e=>{if(e.ctrlKey||Math.abs(e.deltaX)>Math.abs(e.deltaY)||bouquetOpen||loveOpen)return;e.preventDefault();const now=performance.now();if(now<cooldown.current){delta=0;last=now;return}if(now-last>180||Math.sign(delta)!==Math.sign(e.deltaY))delta=0;last=now;delta+=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?innerHeight:1);if(Math.abs(delta)>=45){go(active.current+Math.sign(delta));delta=0}};
-  const key=e=>{if(bouquetOpen||loveOpen||e.altKey||e.ctrlKey||e.metaKey||e.target.closest('button,a,input,textarea,select,[role="tab"]'))return;if(['ArrowDown','ArrowRight','PageDown',' ','ArrowUp','ArrowLeft','PageUp','Home','End'].includes(e.key)){e.preventDefault();if(e.key==='Home')go(0);else if(e.key==='End')go(5);else go(active.current+(['ArrowUp','ArrowLeft','PageUp'].includes(e.key)?-1:1))}};
-  window.addEventListener('wheel',wheel,{passive:false});window.addEventListener('keydown',key);return()=>{window.removeEventListener('wheel',wheel);window.removeEventListener('keydown',key)};
- },[go,loveOpen,bouquetOpen]);
- useEffect(()=>()=>clearTimeout(celebrationTimer.current),[]);
- const touchStart=e=>{if(!e.target.closest('button,a,[role="dialog"]'))touch.current={x:e.touches[0].clientX,y:e.touches[0].clientY};else touch.current=null};
- const touchEnd=e=>{if(!touch.current||loveOpen||bouquetOpen)return;const dy=touch.current.y-e.changedTouches[0].clientY,dx=touch.current.x-e.changedTouches[0].clientX;if(Math.abs(dy)>45&&Math.abs(dy)>Math.abs(dx))go(active.current+Math.sign(dy));else if(Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy))go(active.current+Math.sign(dx));touch.current=null};
- const blowCandles=()=>{setCandlesOut(true);setLoveOpen(true);setConfetti(true);clearTimeout(celebrationTimer.current);celebrationTimer.current=setTimeout(()=>setConfetti(false),4800)};
- const navTo=[0,2,4];
- return <div className={`birthday-site scene-${scene}`} onTouchStart={touchStart} onTouchEnd={touchEnd}>
-  <div className="scene-art" key={`image-${scene}`} aria-hidden="true"><img src={images[scene]} alt="" fetchPriority={scene===0?'high':'auto'}/></div>
-  <div className="scene-wash" aria-hidden="true"/>
-  <header className="topbar">
-   <button className="monogram" onClick={()=>go(0)} aria-label="Kembali ke awal">f<span>♡</span></button>
-   <span className="occasion">A LITTLE STORY <i>FOR FADILLA</i></span>
-   <nav aria-label="Navigasi cerita">{['Home','Story','Wish'].map((label,i)=><button key={label} className={((i===0&&scene===0)||(i===1&&(scene===1||scene===2||scene===3))||(i===2&&scene>=4))?'current':''} onClick={()=>go(navTo[i])}>{label}</button>)}</nav>
-   <button className="sound-toggle" onClick={toggle} aria-label={playing?'Matikan musik':'Putar musik'}>{playing?<Volume2 size={16}/>:<VolumeX size={16}/>}<span>{unavailable?'':'Music'}</span></button>
-  </header>
-  <main className={`story-area ${direction<0?'reverse':''}`} aria-label="Kisah ulang tahun Fadilla">
-   <section className={`story-scene story-${scene}`} key={`story-${scene}`} aria-labelledby={`story-title-${scene}`}>
-    {scene===0&&<>
-     <span className="story-kicker"><i/> A STORY FOR YOUR 23RD BIRTHDAY</span>
-     <h1 id="story-title-0">Happy <em>23rd</em><br/>Birthday<span className="pink-dot">!</span></h1>
-     <p className="scene-subtitle">Fadilla Fitri Azzahra</p>
-     <p className="scene-copy">Malam ini, ada kisah kecil tentang<br/>dua hati yang saling mencari.</p>
-     <button className="story-cta" onClick={()=>go(1)}>Mulai cerita kita <ArrowRight size={17}/></button>
-    </>}
-    {scene===1&&<>
-     <span className="story-kicker"><Heart size={14}/> EVEN APART, YOU'RE CLOSE</span>
-     <h2 id="story-title-1" className="story-heading">Jauh di mata,<br/><em>dekat di mimpi.</em></h2>
-     <p className="scene-copy">Malam memisahkan kita oleh dinding dan jarak.<br/>Tapi saat mata terpejam, aku selalu menemukanmu.</p>
-     <button className="story-cta" onClick={()=>go(2)}>Ikuti mimpi kita <Sparkles size={16}/></button>
-    </>}
-    {scene===2&&<>
-     <span className="story-kicker"><Sparkles size={14}/> AND THEN, THE WORLD TURNED PINK</span>
-     <h2 id="story-title-2" className="story-heading">Mimpi yang<br/><em>hanya milik kita.</em></h2>
-     <p className="scene-copy">Di bawah langit biru dan bunga yang beterbangan,<br/>akhirnya kita bertemu di tempat paling indah.</p>
-     <button className="story-cta" onClick={()=>go(3)}>Temukan aku <ArrowRight size={17}/></button>
-    </>}
-    {scene===3&&<>
-     <span className="story-kicker"><Heart size={14}/> AT LAST, TOGETHER</span>
-     <h2 id="story-title-3" className="story-heading">Akhirnya,<br/><em>aku menemukanmu.</em></h2>
-     <p className="scene-copy">Pelukan yang terasa seperti pulang.<br/>Genggaman tangan yang tak ingin kulepaskan.</p>
-     <button className="story-cta" onClick={()=>go(4)}>Ada kejutan untukmu <ArrowRight size={17}/></button>
-    </>}
-    {scene===4&&<>
-     <span className="story-kicker"><Sparkles size={14}/> A LITTLE SURPRISE, JUST FOR YOU</span>
-     <h2 id="story-title-4" className="story-heading">Bunga untukmu,<br/><em>dan satu harapan.</em></h2>
-     <p className="scene-copy">Rangkai bunga pilihanmu jadi buket kecil<br/>sebelum kita meniup lilin bersama.</p>
-     <div className="story-actions">
-      <button className="story-cta" onClick={()=>setBouquetOpen(true)}>{bouquetMade?'Lihat buketmu lagi':'Rangkai buket untukmu'} <ArrowRight size={17}/></button>
-      <button className="story-cta story-cta-secondary" onClick={()=>{if(!candlesOut)blowCandles();else setLoveOpen(true)}}>{candlesOut?'Baca lagi pesanku':'Tiup lilinnya, sayang'} <Sparkles size={16}/></button>
-     </div>
-    </>}
-    {scene===5&&<>
-     <span className="story-kicker"><Sparkles size={14}/> WAKE UP, MY SLEEPYHEAD</span>
-     <h2 id="story-title-5" className="story-heading">Yah, hampir<br/><em>jadi kenyataan!</em></h2>
-     <p className="scene-copy">Belum sempat ciuman, kita malah terbangun—<br/>rambut acak-acakan, masih sama-sama ngiler!<br/>Untung ulang tahunmu bukan mimpi. ♡</p>
-     <p className="scene-subtitle waking-signoff">Selamat ulang tahun, Fadilla. Aku sayang kamu.</p>
-     <button className="story-cta" onClick={()=>{setCandlesOut(false);setLoveOpen(false);go(0)}}>Putar lagi mimpi kita <ArrowUp size={17}/></button>
-    </>}
-   </section>
-   {scene===4&&<div className={`candle-flames ${candlesOut?'flames-out':''}`} aria-hidden="true"><i/><i/><i/><span/></div>}
-  </main>
-  {scene===4&&<div className={`cake-vignette ${candlesOut?'out':''}`} aria-hidden="true"/>}
-  <div className="story-nav" role="group" aria-label="Pilih bagian cerita">{chapters.map((name,i)=><button aria-label={`Bagian ${i+1}: ${name}`} aria-current={scene===i?'step':undefined} onClick={()=>go(i)} key={name}><span>{name}</span><i/></button>)}</div>
-  <footer className="bottom-bar">
-   <span className="counter"><strong>0{scene+1}</strong><i/>0{chapters.length}</span>
-   <span className="scroll-guide"><ArrowDown size={13}/> SCROLL TO FOLLOW OUR STORY</span>
-   <div className="stepper"><button disabled={scene===0} aria-label="Bagian sebelumnya" onClick={()=>go(scene-1)}><ArrowLeft size={16}/></button><button disabled={scene===5} aria-label="Bagian berikutnya" onClick={()=>go(scene+1)}><ArrowRight size={16}/></button></div>
-  </footer>
-  <span className="screenreader-status" aria-live="polite">Bagian {scene+1} dari 6: {chapters[scene]}</span>
-  {bouquetOpen&&<InteractiveBouquet onClose={closeBouquet} onComplete={completeBouquet} recipient="Fadilla"/>}
-  {loveOpen&&<LoveOverlay onClose={closeLove}/>}
-  {confetti&&<div className="confetti" aria-hidden="true">{Array.from({length:65},(_,i)=><i key={i} style={{left:`${i*37%100}%`,animationDelay:`${i%7*.11}s`,background:['#ff55a2','#ffb2d1','#ffe2ed','#fff'][i%4]}}/>)}</div>}
- </div>;
+
+function AlbumIndex({scene, go}) {
+  const strip = useRef(null);
+  useEffect(() => {
+    const rail = strip.current;
+    const selected = rail.children[scene];
+    if (rail.scrollWidth > rail.clientWidth) {
+      rail.scrollTo({left: selected.offsetLeft - (rail.clientWidth - selected.offsetWidth) / 2,
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'});
+    }
+  }, [scene]);
+  return <footer className="album-index" aria-label="Isi album">
+    <div className="index-heading"><span className="microtype"><BookOpen size={14}/> Isi album</span>
+    </div>
+    <nav className="chapter-strip" ref={strip} aria-label="Pilih bagian cerita">{chapters.map((item,i) =>
+      <button key={item.name} onClick={() => go(i)} aria-current={i === scene ? 'step' : undefined} aria-label={'Bagian ' + (i+1) + ': ' + item.name}>
+        <img src={item.thumbnail} alt="" loading={i === 0 ? 'eager' : 'lazy'}/>
+        <span><small>{number(i)}</small><strong>{item.name}</strong></span>
+      </button>
+    )}</nav>
+  </footer>;
+}
+
+function App() {
+  const [scene, setScene] = useState(0);
+  const [overlay, setOverlay] = useState(null);
+  const [candlesOut, setCandlesOut] = useState(false);
+  const [bouquetMade, setBouquetMade] = useState(() => {
+    try { return localStorage.getItem('ultah.bouquet-finished') === 'yes'; } catch { return false; }
+  });
+  const {state:music, toggle} = useMusic();
+  const chapter = chapters[scene];
+  const story = useRef(null);
+  const focusNewChapter = useRef(false);
+  const touch = useRef(null);
+  const go = useCallback(next => {
+    if (next < 0 || next >= chapters.length) return;
+    focusNewChapter.current = !!story.current?.contains(document.activeElement);
+    setScene(next);
+    window.scrollTo({top:0, behavior:'instant'});
+  }, []);
+  useEffect(() => {
+    if (focusNewChapter.current) {
+      story.current?.querySelector('h1,h2')?.focus({preventScroll:true});
+      focusNewChapter.current = false;
+    }
+  }, [scene]);
+  const closeOverlay = useCallback(() => setOverlay(null), []);
+  const completeBouquet = useCallback(() => {
+    setBouquetMade(true);
+    try { localStorage.setItem('ultah.bouquet-finished','yes'); } catch {}
+    setOverlay(null);
+  }, []);
+
+  useEffect(() => {
+    if (!overlay) return;
+    const old = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = old; };
+  }, [overlay]);
+  useEffect(() => {
+    if (overlay) return;
+    const keys = event => {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey ||
+          event.target.closest?.('input,textarea,select,[contenteditable="true"]')) return;
+      const backwards = ['ArrowLeft','PageUp','ArrowUp'].includes(event.key);
+      const forwards = ['ArrowRight','PageDown','ArrowDown'].includes(event.key);
+      if (!backwards && !forwards && !['Home','End'].includes(event.key)) return;
+      if (['ArrowUp','ArrowDown','PageDown','PageUp'].includes(event.key) && document.documentElement.scrollHeight > innerHeight + 2) return;
+      event.preventDefault();
+      if (event.key === 'Home') go(0);
+      else if (event.key === 'End') go(chapters.length-1);
+      else go(scene + (backwards ? -1 : 1));
+    };
+    window.addEventListener('keydown', keys);
+    return () => window.removeEventListener('keydown', keys);
+  }, [scene,overlay,go]);
+  useEffect(() => {
+    if (overlay) return;
+    let sum = 0, previous = 0, lockedUntil = 0;
+    const wheel = event => {
+      if (event.ctrlKey || Math.abs(event.deltaX) > Math.abs(event.deltaY) || document.documentElement.scrollHeight > innerHeight + 2 || event.target.closest?.('.chapter-strip')) return;
+      const now = performance.now();
+      if (now - previous > 240 || Math.sign(event.deltaY) !== Math.sign(sum)) sum = 0;
+      previous = now;
+      if (now < lockedUntil) return;
+      sum += event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? innerHeight : 1);
+      if (Math.abs(sum) >= 65) {
+        const step = Math.sign(sum);
+        setScene(current => Math.max(0, Math.min(chapters.length - 1, current + step)));
+        sum = 0; lockedUntil = now + 900;
+      }
+    };
+    window.addEventListener('wheel', wheel, {passive:true});
+    return () => window.removeEventListener('wheel', wheel);
+  }, [overlay]);
+  function swipeEnd(event) {
+    if (!touch.current || event.changedTouches.length !== 1) return;
+    const {clientX, clientY} = event.changedTouches[0];
+    const dx = clientX - touch.current.x, dy = clientY - touch.current.y;
+    touch.current = null;
+    if (Math.abs(dx) > 70 && Math.abs(dx) > 1.5 * Math.abs(dy)) go(scene + (dx < 0 ? 1 : -1));
+  }
+  const startBouquet = () => { go(4); setOverlay('bouquet'); };
+  function primaryAction() {
+    if (scene === 4) startBouquet();
+    else if (scene === 5) { setCandlesOut(false); go(0); }
+    else go(scene + 1);
+  }
+
+  return <div className="birthday-site" style={{'--accent':chapter.color,'--paper':chapter.paper}}>
+    <div className="album-shell" inert={overlay ? true : undefined}>
+      <header className="album-header">
+        <button className="wordmark" onClick={() => go(0)} aria-label="Untuk Fadilla, kembali ke awal"><span className="brand-stamp"><img src={bloom} alt=""/></span><span>Untuk Fadilla<span className="brand-period">.</span></span></button>
+        <nav className="top-nav" aria-label="Navigasi utama">
+          <button className={scene !== 4 ? 'active' : ''} onClick={() => go(0)}>Album</button>
+          <button className={scene === 4 ? 'active' : ''} onClick={() => go(4)}>Wish</button>
+          <button onClick={startBouquet}>Buket <Flower2 size={14}/></button>
+        </nav>
+        <button className="music-toggle" onClick={toggle} aria-pressed={music === 'on'} disabled={music === 'unavailable'}
+          aria-label={music === 'on' ? 'Matikan musik' : music === 'unavailable' ? 'Musik tidak tersedia' : 'Putar musik'}>
+          {music === 'on' ? <Music2 size={17}/> : <VolumeX size={17}/>}<span>{music === 'on' ? 'Musik aktif' : music === 'unavailable' ? 'Audio tidak tersedia' : 'Musik'}</span>
+        </button>
+      </header>
+      <main className="album-main" aria-label="Kisah ulang tahun Fadilla">
+        <section ref={story} key={scene} className={'spread spread-' + scene} aria-labelledby="spread-title"
+          onTouchStart={event => {touch.current = event.touches.length === 1 ? {x:event.touches[0].clientX, y:event.touches[0].clientY} : null;}}
+          onTouchCancel={() => {touch.current = null;}} onTouchEnd={swipeEnd}>
+          <div className="story-heading">
+            <div className="chapter-label"><i/> {chapter.section}</div>
+            {React.createElement(scene === 0 ? 'h1' : 'h2', {id:'spread-title',tabIndex:-1}, chapter.title, ' ', <em>{chapter.accent}</em>)}
+            {scene === 0 && <p className="recipient">Fadilla Fitri Azzahra</p>}
+          </div>
+          <ArtCard chapter={chapter} index={scene}/>
+          <div className="story-body">
+            <p>{chapter.copy}</p>
+            <div className="story-actions">
+              <button className="primary-action" onClick={primaryAction}>{scene === 4 && bouquetMade ? 'Lihat buketmu lagi' : chapter.action} {scene === 4 ? <Flower2 size={17}/> : scene === 5 ? <RotateCcw size={16}/> : <ArrowRight size={17}/>}</button>
+              {scene === 4 && <button className="text-action" onClick={() => setOverlay('letter')}>{candlesOut ? <Mail size={16}/> : <Cake size={17}/>} {candlesOut ? 'Baca lagi pesanku' : 'Tiup lilinnya'}</button>}
+            </div>
+          </div>
+        </section>
+        <div className="page-turns">
+          <span>{chapter.name} <i/> <b>{number(scene)}</b> / 06</span>
+          <button className="round-action" aria-label="Bagian sebelumnya" disabled={scene === 0} onClick={() => go(scene-1)}><ArrowLeft size={17}/></button>
+          <button className="round-action" aria-label="Bagian berikutnya" disabled={scene === chapters.length-1} onClick={() => go(scene+1)}><ArrowRight size={17}/></button>
+        </div>
+      </main>
+      <AlbumIndex scene={scene} go={go}/>
+      <span aria-live="polite" className="screenreader-status">Bagian {scene+1} dari 6. {chapter.name}.</span>
+    </div>
+    {overlay === 'bouquet' && <InteractiveBouquet onClose={closeOverlay} onComplete={completeBouquet} recipient="Fadilla"/>}
+    {overlay === 'letter' && <BirthdayLetter alreadyRead={candlesOut} onRead={() => setCandlesOut(true)} onClose={closeOverlay} onNext={() => {closeOverlay();go(5);}}/>}
+  </div>;
 }
 createRoot(document.getElementById('root')).render(<App/>);
